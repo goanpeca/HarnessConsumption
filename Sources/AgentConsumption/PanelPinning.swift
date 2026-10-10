@@ -25,7 +25,8 @@ private struct PanelPinning: NSViewRepresentable {
             ]
             observers = names.map { name in
                 NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
-                    self?.pin()
+                    // queue: .main, so this already runs on the main actor
+                    MainActor.assumeIsolated { self?.pin() }
                 }
             }
             DispatchQueue.main.async { [weak self] in self?.pin() }
