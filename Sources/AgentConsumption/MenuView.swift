@@ -22,19 +22,19 @@ struct MenuView: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            .padding([.top, .horizontal], 12)
+            .padding([.top, .horizontal], 14)
 
             switch pane {
             case .usage:
-                ScrollView { usage.padding(.horizontal, 12).padding(.vertical, 4) }
+                ScrollView { usage.padding(.horizontal, 14).padding(.vertical, 6) }
                     .frame(height: Self.paneHeight)
             case .settings:
-                ScrollView { SettingsView(store: store).padding(.horizontal, 12).padding(.vertical, 4) }
+                ScrollView { SettingsView(store: store).padding(.horizontal, 14).padding(.vertical, 6) }
                     .frame(height: Self.paneHeight)
             }
 
             Divider()
-            footer.padding([.bottom, .horizontal], 12)
+            footer.buttonStyle(.bordered).controlSize(.small).padding([.bottom, .horizontal], 14)
         }
         .frame(width: 360)
         .pinnedBelowMenuBar()
@@ -76,11 +76,19 @@ private struct ProviderSection: View {
 
     var body: some View {
         let state = store.states[provider]
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline) {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: provider == .claude ? "asterisk" : "terminal")
+                    .font(.system(size: 11, weight: .bold))
+                    .frame(width: 22, height: 22)
+                    .background(.quaternary, in: .circle)
                 Text(provider.displayName).font(.headline)
                 if let plan = state?.usage?.plan {
-                    Text(plan.capitalized).font(.caption).foregroundStyle(.secondary)
+                    Text(plan.capitalized)
+                        .font(.caption2.weight(.medium))
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(.quaternary, in: .capsule)
+                        .foregroundStyle(.secondary)
                 }
                 Spacer()
             }
@@ -105,15 +113,16 @@ private struct WindowRow: View {
     let pace: WindowPace?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack {
-                Text(window.kind.displayName)
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(window.kind.displayName).font(.subheadline)
                 Spacer()
-                Text("\(Int(window.remainingPercent.rounded()))% left").monospacedDigit()
+                Text("\(Int(window.remainingPercent.rounded()))%")
+                    .font(.system(.title3, design: .rounded).weight(.semibold))
+                    .monospacedDigit()
+                Text("left").font(.subheadline).foregroundStyle(.secondary)
             }
-            .font(.subheadline)
-            ProgressView(value: window.usedPercent, total: 100)
-                .tint(tint)
+            UsageBar(fraction: window.usedPercent / 100, tint: tint)
             HStack {
                 if let reset = window.resetsAt {
                     Text("Resets \(reset.formatted(.relative(presentation: .named)))")
@@ -122,8 +131,8 @@ private struct WindowRow: View {
                 }
                 Spacer()
                 if window.kind == .weekly, let pace {
-                    Text("Today: \(percent(pace.todayShare)) · \(days(pace.workDaysLeft)) left")
-                        .foregroundStyle(pace.isOverPace ? .orange : .secondary)
+                    Text("Today \(percent(pace.todayShare)) · \(days(pace.workDaysLeft)) left")
+                        .foregroundStyle(pace.isOverPace ? Color.orange : Color.secondary)
                 }
             }
             .font(.caption).foregroundStyle(.secondary)
@@ -137,30 +146,53 @@ private struct WindowRow: View {
     }
 }
 
+/// A slim capsule bar showing how much of a window is used; matches system progress styling.
+private struct UsageBar: View {
+    let fraction: Double
+    let tint: Color
+
+    var body: some View {
+        Capsule()
+            .fill(.quaternary)
+            .frame(height: 6)
+            .overlay(alignment: .leading) {
+                GeometryReader { proxy in
+                    Capsule().fill(tint)
+                        .frame(width: max(6, proxy.size.width * min(max(fraction, 0), 1)))
+                }
+            }
+            .accessibilityElement()
+            .accessibilityLabel("Used")
+            .accessibilityValue("\(Int((fraction * 100).rounded())) percent")
+    }
+}
+
 private struct MonthSection: View {
     let store: UsageStore
 
     var body: some View {
         let outlook = store.monthOutlook(.claude)
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
                 Text(Date.now.formatted(.dateTime.month(.wide).year())).font(.headline)
                 Spacer()
                 Text("\(outlook.workDaysLeft) of \(days(outlook.workDaysInMonth)) left")
-                    .font(.subheadline).monospacedDigit()
+                    .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
             }
             ForEach(Provider.allCases) { provider in
                 let outlook = store.monthOutlook(provider)
                 if let projected = outlook.projectedPercentLeft, let daily = outlook.dailyShare {
-                    Text(
-                        "\(provider.displayName): \(weeks(projected)) of quota left this month · "
-                            + "\(percent(daily))/day"
-                    )
-                    .font(.caption).foregroundStyle(.secondary)
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(provider.displayName).font(.subheadline)
+                        Spacer()
+                        Text("\(weeks(projected)) of quota").font(.subheadline)
+                        Text("· \(percent(daily))/day").font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    .monospacedDigit()
                 }
             }
             Text(store.settings.summary(countries: store.countries))
-                .font(.caption2).foregroundStyle(.tertiary)
+                .font(.caption).foregroundStyle(.tertiary)
             if store.holidaysMissing {
                 Label(
                     "Couldn't load holidays; counting without them.",
