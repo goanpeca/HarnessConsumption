@@ -16,9 +16,11 @@ resets, and with a morning summary on work days (after 08:00 Bogotá).
 ```bash
 make run        # build build/Agent Consumption.app and launch it
 make install    # copy to /Applications (add it to Login Items to start at login)
+make bootstrap  # install dev tools and git hooks (once)
 make test       # logic tests
-make lint       # swift-format lint (strict)
-make ci         # lint + tests + app bundle, exactly what GitHub Actions runs
+make lint       # swift-format + SwiftLint, both strict
+make security   # zizmor, actionlint, shellcheck, gitleaks
+make ci         # everything GitHub Actions runs; the pre-push hook runs it too
 .build/debug/AgentConsumption --dump   # print the current readings and exit (after `make build`)
 ```
 
@@ -57,3 +59,9 @@ Layout: `Sources/ConsumptionKit` is pure logic (tested, reusable for an iOS widg
 The **Settings** tab sets the country (or none), which weekdays count, whether public holidays are
 days off, and how often usage is checked. They apply to today's share, the over-pace check, the
 month outlook and the morning summary.
+
+## Development
+
+Start at [AGENTS.md](AGENTS.md): layout, commands, rules, and where each doc lives. CI is hardened
+(least-privilege tokens, SHA-pinned actions, zizmor, gitleaks); details in
+[docs/SECURITY.md](docs/SECURITY.md).
