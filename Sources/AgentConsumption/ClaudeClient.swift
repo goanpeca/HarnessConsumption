@@ -95,8 +95,10 @@ struct ClaudeClient {
                 let status = (response as? HTTPURLResponse)?.statusCode ?? 0
                 guard status == 200 else {
                     log.notice("token refresh at \(url.host() ?? "", privacy: .public) returned \(status)")
-                    lastError = ProviderError.http(status, "token refresh failed; run `claude` once to sign in again")
-                    if status == 400 || status == 401 { break }  // refresh token rejected; another host won't help
+                    if status == 400 || status == 401 {  // refresh token rejected; another host won't help
+                        throw ProviderError.notSignedIn("Claude login expired. Run `claude`, then /login.")
+                    }
+                    lastError = ProviderError.http(status, "token refresh failed")
                     continue
                 }
                 let token = try JSONDecoder().decode(TokenResponse.self, from: data)

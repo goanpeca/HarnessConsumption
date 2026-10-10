@@ -34,6 +34,21 @@ struct ParsingTests {
         #expect(usage.weekly?.usedPercent == 5)
     }
 
+    @Test func parsesCodexSpendLimitWhenNoRateLimit() throws {
+        let json = #"""
+            {"plan_type":"enterprise","rate_limit":null,"credits":{"has_credits":true,"balance":null},
+             "spend_control":{"reached":false,"individual_limit":{"source":"org","unit":"credits",
+              "used_percent":1,"remaining_percent":99,"reset_after_seconds":1834820,"reset_at":1793491200}}}
+            """#
+        let usage = try CodexUsageParser.parse(Data(json.utf8), now: now)
+        #expect(usage.weekly == nil)
+        #expect(
+            usage.monthly
+                == UsageWindow(
+                    kind: .monthly, usedPercent: 1, resetsAt: Date(timeIntervalSince1970: 1_793_491_200)))
+        #expect(usage.plan == "enterprise")
+    }
+
     @Test func parsesClaudeUsage() throws {
         let json = #"""
             {"five_hour":{"utilization":37.0,"resets_at":"2026-10-07T18:00:00.123456+00:00"},

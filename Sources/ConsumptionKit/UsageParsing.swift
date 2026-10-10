@@ -63,8 +63,19 @@ public enum CodexUsageParser {
             let reset_after_seconds: Double?
         }
 
+        struct SpendLimit: Decodable {
+            let used_percent: Double
+            let reset_at: Double?
+            let reset_after_seconds: Double?
+        }
+
+        struct SpendControl: Decodable {
+            let individual_limit: SpendLimit?
+        }
+
         let plan_type: String?
         let rate_limit: RateLimit?
+        let spend_control: SpendControl?
     }
 
     public static func parse(_ data: Data, now: Date) throws -> ProviderUsage {
@@ -75,6 +86,13 @@ public enum CodexUsageParser {
             throw UsageParseError.invalidPayload("Codex usage: \(error)")
         }
         let raw = [response.rate_limit?.primary_window, response.rate_limit?.secondary_window].compactMap(\.self)
+        if raw.isEmpty, let limit = response.spend_control?.individual_limit {
+            let resetsAt =
+                limit.reset_at.map { Date(timeIntervalSince1970: $0) }
+                ?? limit.reset_after_seconds.map { now.addingTimeInterval($0) }
+            let window = UsageWindow(kind: .monthly, usedPercent: limit.used_percent, resetsAt: resetsAt)
+            return ProviderUsage(provider: .codex, plan: response.plan_type, windows: [window], fetchedAt: now)
+        }
         guard !raw.isEmpty else { throw UsageParseError.invalidPayload("Codex usage: no windows") }
         let windows = raw.map { window in
             let length = window.limit_window_seconds ?? WindowKind.weekly.defaultLength

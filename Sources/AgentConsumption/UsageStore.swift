@@ -175,13 +175,13 @@ final class UsageStore {
         return lines.joined(separator: "\n")
     }
 
-    /// e.g. `✳︎ 62% ◎ 80%`: weekly quota left per provider.
+    /// e.g. `✳︎ 62% ◎ 80%`: weekly (or monthly spend) quota left per provider.
     var menuBarTitle: String {
         let parts = Provider.allCases.map { provider -> String in
             let symbol = provider == .claude ? "✳︎" : "◎"
-            guard let weekly = states[provider]?.usage?.weekly else { return "\(symbol) –" }
+            guard let window = states[provider]?.usage?.headline else { return "\(symbol) –" }
             let stale = states[provider]?.error != nil ? "?" : ""
-            return "\(symbol) \(Int(weekly.remainingPercent.rounded()))%\(stale)"
+            return "\(symbol) \(Int(window.remainingPercent.rounded()))%\(stale)"
         }
         return parts.joined(separator: "  ")
     }

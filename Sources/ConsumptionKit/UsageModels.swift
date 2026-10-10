@@ -19,11 +19,14 @@ public enum WindowKind: String, Codable, Sendable {
     case session
     /// The 7-day window.
     case weekly
+    /// A monthly spend limit, reported instead of rate-limit windows on some plans.
+    case monthly
 
     public var displayName: String {
         switch self {
         case .session: "5-hour"
         case .weekly: "Weekly"
+        case .monthly: "Monthly"
         }
     }
 
@@ -36,6 +39,7 @@ public enum WindowKind: String, Codable, Sendable {
         switch self {
         case .session: 5 * 3600
         case .weekly: 7 * 86_400
+        case .monthly: 30 * 86_400
         }
     }
 }
@@ -72,4 +76,8 @@ public struct ProviderUsage: Codable, Sendable, Equatable {
 
     public var weekly: UsageWindow? { windows.first { $0.kind == .weekly } }
     public var session: UsageWindow? { windows.first { $0.kind == .session } }
+    public var monthly: UsageWindow? { windows.first { $0.kind == .monthly } }
+
+    /// The window the menu bar shows: weekly when there is one, else the monthly spend limit.
+    public var headline: UsageWindow? { weekly ?? monthly }
 }

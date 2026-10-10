@@ -32,6 +32,10 @@ subscriptionType}`. Refresh: `POST` JSON `{grant_type: refresh_token, refresh_to
 
 A window longer than a day is "weekly", otherwise "5-hour".
 
+Some plans (seen on enterprise) return `"rate_limit": null` and report a monthly spend limit instead:
+`spend_control.individual_limit.{used_percent, reset_at, reset_after_seconds}`. It shows as a
+"Monthly" window with no pacing.
+
 ## Holidays
 
 `GET https://date.nager.at/api/v3/PublicHolidays/{year}/{CC}` and `/api/v3/AvailableCountries`

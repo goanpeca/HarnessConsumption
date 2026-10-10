@@ -108,6 +108,9 @@ public struct AlertPlanner: Sendable {
 
     func summary(usages: [ProviderUsage], calendar: WorkCalendar, now: Date) -> String {
         usages.map { usage in
+            if usage.weekly == nil, let monthly = usage.monthly {
+                return "\(usage.provider.displayName): \(format(monthly.remainingPercent)) of monthly limit left"
+            }
             guard let weekly = usage.weekly else { return "\(usage.provider.displayName): no weekly data" }
             var line = "\(usage.provider.displayName): \(format(weekly.remainingPercent)) of week left"
             if let pace = WindowPace.compute(window: weekly, calendar: calendar, now: now) {
