@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Full gate before anything leaves the machine: exactly what CI runs.
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+make --no-print-directory ci

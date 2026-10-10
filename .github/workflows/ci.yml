@@ -1,28 +1,42 @@
 name: CI
 
 on:
+  pull_request:
   push:
     branches: [main]
-  pull_request:
+
+# No token permissions by default; each job asks for what it needs.
+permissions: {}
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  test:
+  gate:
+    name: Checks, lint, tests, app bundle
     runs-on: macos-26
+    timeout-minutes: 20
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - name: Swift version
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Toolchain
         run: swift --version
+      - name: Install SwiftLint
+        run: brew install swiftlint
+      - name: Harness checks
+        run: make check
       - name: Lint
         run: make lint
-      - name: Test
-        run: swift test --parallel
-      - name: Build app bundle
-        run: make app
-      - name: Check bundle
+      - name: Build (warnings are errors)
+        run: make build
+      - name: Tests and coverage floors
+        run: make coverage
+      - name: App bundle
         run: |
+          make app
           codesign --verify --verbose "build/Agent Consumption.app"
           plutil -lint "build/Agent Consumption.app/Contents/Info.plist"

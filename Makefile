@@ -1,20 +1,48 @@
 APP := build/Agent Consumption.app
+SWIFT_SOURCES := Sources Tests Package.swift
 
-.PHONY: test build app run install clean logs lint ci
+.PHONY: help bootstrap hooks test coverage check lint format security build app run install logs ci clean
+
+help:            ## List targets
+	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
+
+bootstrap:       ## Install dev tools (Homebrew) and git hooks
+	brew install swiftlint zizmor gitleaks actionlint shellcheck
+	$(MAKE) hooks
+
+hooks:           ## Use .githooks (pre-commit: fast checks, pre-push: full gate)
+	git config core.hooksPath .githooks
 
 test:            ## Package tests (Swift Testing)
 	swift test
 
-lint:            ## Syntax-level checks that fail on unparsable or badly formed Swift
-	swift format lint --strict --recursive Sources Tests Package.swift --configuration .swift-format
+coverage:        ## Tests plus the coverage floors
+	python3 scripts/check-coverage.py
 
-ci: lint test app   ## What CI runs
+check:           ## Harness checks: architecture, docs, file size
+	python3 scripts/check-architecture.py
+	python3 scripts/check-docs.py
+	bash scripts/check-file-size.sh
 
-build:           ## Debug build
-	swift build
+lint:            ## swift-format (strict) and SwiftLint (strict)
+	swift format lint --strict --recursive $(SWIFT_SOURCES) --configuration .swift-format
+	swiftlint lint --strict --quiet
+
+format:          ## Apply swift-format and SwiftLint autofixes
+	swift format format --in-place --recursive $(SWIFT_SOURCES) --configuration .swift-format
+	swiftlint --fix --quiet
+
+security:        ## Workflow audit (zizmor), actionlint, shellcheck, secret scan
+	zizmor --pedantic .github
+	actionlint
+	shellcheck scripts/*.sh .githooks/*
+	gitleaks git --no-banner --redact --verbose
+
+build:           ## Debug build, warnings are errors
+	swift build -Xswiftc -warnings-as-errors
 
 app:             ## Release .app bundle in build/
-	scripts/bundle.sh
+	bash scripts/bundle.sh
 
 run: app         ## Build and launch the menu bar app
 	-pkill -x AgentConsumption
@@ -28,6 +56,8 @@ install: app     ## Copy to /Applications
 
 logs:            ## Stream the app's logs
 	log stream --predicate 'subsystem == "com.goanpeca.agentconsumption"' --level info
+
+ci: check lint security build coverage app  ## Everything CI runs (ci.yml + security.yml)
 
 clean:
 	rm -rf .build build

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Fast drift scan: harness checks and a secret scan of what is staged.
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+make --no-print-directory check
+if command -v gitleaks >/dev/null; then
+  gitleaks git --pre-commit --staged --no-banner --redact
+else
+  echo "pre-commit: gitleaks not installed; run 'make bootstrap'" >&2
+fi

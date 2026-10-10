@@ -1,0 +1,42 @@
+name: Drift scan
+
+# Garbage collection: weekly, check that docs, layering and file sizes still match the code, and
+# open an issue (once) when they don't. See docs/design-docs/core-beliefs.md.
+on:
+  schedule:
+    - cron: "41 7 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: drift-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    name: Docs, layering, file size
+    runs-on: macos-26
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: write # open the "Drift scan failed" issue
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Harness checks
+        run: make check
+      - name: Open an issue if drift was found
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REPO: ${{ github.repository }}
+        run: |
+          existing="$(gh issue list --repo "$REPO" --label drift --state open --json number --jq 'length')"
+          if [ "$existing" = "0" ]; then
+            gh issue create --repo "$REPO" --label drift \
+              --title "Drift scan failed" \
+              --body "The weekly drift scan failed. See ${RUN_URL} and fix the reported checks."
+          fi
