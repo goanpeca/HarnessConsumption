@@ -13,10 +13,14 @@ Both are **undocumented**: they back Claude Code's `/usage` and Codex's `/status
  "seven_day": {"utilization": 62.5, "resets_at": "2026-10-10T03:00:00Z"}}
 ```
 
-`utilization` is percent used; `resets_at` is null while a window is idle. Credentials: Keychain
-item `Claude Code-credentials`, JSON `claudeAiOauth.{accessToken, refreshToken, expiresAt (ms),
-subscriptionType}`. Refresh: `POST` JSON `{grant_type: refresh_token, refresh_token, client_id}` to
-`console.anthropic.com/v1/oauth/token` (fallback `platform.claude.com`).
+`utilization` is percent used; `resets_at` is null while a window is idle. Enterprise returns both
+as null plus `extra_usage.{is_enabled, utilization, monthly_limit, used_credits}`, a monthly spend
+limit with no reset date (treated as the 1st, UTC).
+
+Credentials: Claude Desktop's `~/Library/Application Support/Claude/config.json`, key
+`oauth:tokenCacheV2`: base64 of `v10` + AES-128-CBC (PBKDF2-SHA1, salt `saltysalt`, 1003 rounds, IV
+16 spaces; password is the `Claude Safe Storage` Keychain item). It decrypts to a map of entries
+`{token, expiresAt (ms), subscriptionType, ...}`. Never refreshed here.
 
 ## Codex
 

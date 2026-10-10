@@ -12,8 +12,13 @@ public enum ClaudeUsageParser {
             let resets_at: String?
         }
 
+        struct ExtraUsage: Decodable {
+            let utilization: Double?
+        }
+
         let five_hour: Bucket?
         let seven_day: Bucket?
+        let extra_usage: ExtraUsage?
     }
 
     public static func parse(_ data: Data, plan: String?, now: Date) throws -> ProviderUsage {
@@ -30,8 +35,20 @@ public enum ClaudeUsageParser {
         if let bucket = response.seven_day {
             windows.append(window(.weekly, bucket))
         }
+        if windows.isEmpty, let used = response.extra_usage?.utilization {
+            let window = UsageWindow(kind: .monthly, usedPercent: used, resetsAt: nextMonthStartUTC(after: now))
+            return ProviderUsage(provider: .claude, plan: plan, windows: [window], fetchedAt: now)
+        }
         guard !windows.isEmpty else { throw UsageParseError.invalidPayload("Claude usage: no windows") }
         return ProviderUsage(provider: .claude, plan: plan, windows: windows, fetchedAt: now)
+    }
+
+    /// The payload carries no reset date for the monthly spend limit; it resets on the 1st, UTC.
+    static func nextMonthStartUTC(after date: Date) -> Date? {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC") ?? .gmt
+        guard let start = calendar.dateInterval(of: .month, for: date)?.start else { return nil }
+        return calendar.date(byAdding: .month, value: 1, to: start)
     }
 
     private static func window(_ kind: WindowKind, _ bucket: Response.Bucket) -> UsageWindow {

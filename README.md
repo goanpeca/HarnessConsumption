@@ -26,20 +26,20 @@ make ci         # everything GitHub Actions runs; the pre-push hook runs it too
 
 ## How it gets the data
 
-No separate login: it reuses the sessions already on this Mac.
+No separate login: it reuses the Claude Desktop and ChatGPT/Codex desktop app sessions on this Mac. The CLIs' logins are not used.
 
 | Provider | Credentials | Endpoint |
 |---|---|---|
-| Claude | Claude Code's Keychain item `Claude Code-credentials` | `api.anthropic.com/api/oauth/usage` |
-| Codex | `~/.codex/auth.json` (ChatGPT login) | `chatgpt.com/backend-api/wham/usage` |
+| Claude | Claude Desktop's `config.json` token cache, decrypted with the `Claude Safe Storage` Keychain key (one-time prompt) | `api.anthropic.com/api/oauth/usage` |
+| Codex | `~/.codex/auth.json` (the ChatGPT/Codex desktop app's login) | `chatgpt.com/backend-api/wham/usage` |
 
 Both endpoints are **undocumented** (they back Claude Code's `/usage` and Codex's `/status`) and may
 change. This is a personal tool, not something to distribute.
 
-- **Claude:** access tokens expire after a few hours and Claude Code only refreshes them while it
-  runs, so the app refreshes an expired token and writes the new tokens back to the same Keychain
-  item. If that write ever fails, run `claude` and `/login`.
-- **Codex:** read-only. If the token expires, run `codex` once.
+- **Both read-only.** The desktop apps own token refresh. If a token has expired, open the app and
+  press Refresh.
+- Enterprise/business plans report a monthly spend limit instead of 5-hour/weekly windows; it shows as
+  "Monthly" (Claude's reset is assumed to be the 1st, UTC).
 
 ## Pacing
 

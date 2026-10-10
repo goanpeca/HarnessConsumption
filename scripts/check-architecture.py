@@ -29,7 +29,7 @@ LAYERS: dict[str, tuple[str, set[str], set[str]]] = {
     "AgentConsumption": (
         "Runtime and UI",
         {"ConsumptionKit"},
-        {"Foundation", "SwiftUI", "AppKit", "Observation", "UserNotifications", "os"},
+        {"Foundation", "SwiftUI", "AppKit", "Observation", "UserNotifications", "os", "CommonCrypto"},
     ),
 }
 # Never allowed in the pure logic layer: these belong to the app target.

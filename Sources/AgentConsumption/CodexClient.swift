@@ -1,10 +1,10 @@
 import ConsumptionKit
 import Foundation
 
-/// Fetches Codex plan usage with the ChatGPT login Codex keeps in `~/.codex/auth.json`.
+/// Fetches Codex plan usage with the ChatGPT login the Codex desktop app keeps in `~/.codex/auth.json`.
 ///
-/// It never refreshes the token: Codex refreshes it whenever it runs, and rotating it here could
-/// sign Codex out.
+/// It never refreshes the token: the desktop app refreshes it whenever it runs, and rotating it here
+/// could sign Codex out.
 struct CodexClient {
     static let usageURL = URL(string: "https://chatgpt.com/backend-api/wham/usage")!
 
@@ -30,7 +30,7 @@ struct CodexClient {
         guard let data = try? Data(contentsOf: Self.authFile),
             let auth = try? JSONDecoder().decode(Auth.self, from: data), let tokens = auth.tokens
         else {
-            throw ProviderError.notSignedIn("Sign in to Codex with ChatGPT (`codex login`).")
+            throw ProviderError.notSignedIn("Open the ChatGPT/Codex desktop app and sign in, then Refresh.")
         }
         var request = URLRequest(url: Self.usageURL)
         request.setValue("Bearer \(tokens.access_token)", forHTTPHeaderField: "Authorization")
@@ -41,7 +41,7 @@ struct CodexClient {
         let (body, response) = try await session.data(for: request)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         if status == 401 || status == 403 {
-            throw ProviderError.notSignedIn("Codex login expired. Run `codex` once to refresh it.")
+            throw ProviderError.notSignedIn("Codex login expired. Open the ChatGPT/Codex desktop app, then Refresh.")
         }
         guard status == 200 else {
             throw ProviderError.http(status, String(decoding: body.prefix(200), as: UTF8.self))

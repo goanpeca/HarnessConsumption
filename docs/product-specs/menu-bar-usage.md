@@ -14,7 +14,7 @@ the quota lasts through the remaining work days.
 Per provider: plan, then each window (5-hour, weekly) with a bar, percent left, reset time.
 Weekly rows add "Today: X% · N days left" (orange when over pace). A month section shows days left,
 quota left this month in weeks, per-day share, and the active day rules. Errors appear inline in
-orange with the fix (for example "run `codex` once"). Footer: updated time, Refresh, Quit.
+orange with the fix (for example "open Claude Desktop"). Footer: updated time, Refresh, Quit.
 
 ## Settings tab
 

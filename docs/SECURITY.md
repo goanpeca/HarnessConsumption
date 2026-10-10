@@ -4,12 +4,14 @@ Policy for reporting issues: [SECURITY.md](../SECURITY.md).
 
 ## Credentials
 
-- Claude: Claude Code's Keychain item `Claude Code-credentials`, read and updated through
-  `/usr/bin/security` in `Keychain.swift`. New secrets go through stdin as hex, never argv.
-- Codex: `~/.codex/auth.json`, read-only.
+- Claude: Claude Desktop's `oauth:tokenCacheV2` in `config.json`, decrypted in `DesktopAuth.swift`
+  with the `Claude Safe Storage` Keychain key (read through `/usr/bin/security` in `Keychain.swift`).
+  That key decrypts everything Claude Desktop seals, so prefer approving it once ("Allow") over
+  "Always Allow". Read-only; nothing is written back.
+- Codex: `~/.codex/auth.json` (shared with the ChatGPT/Codex desktop app), read-only.
 - Tokens are held in memory only for a request. Never logged, printed, put in a URL, a notification
   or a crash message. `check-architecture.py` flags log lines that mention tokens.
-- Nothing is sent anywhere except `api.anthropic.com`, the two Anthropic OAuth token hosts,
+- Nothing is sent anywhere except `api.anthropic.com`,
   `chatgpt.com` and `date.nager.at` (public holidays; sends only a country code and a year).
 - Country codes are validated (`^[A-Z]{2}$`) before they reach a file name or URL.
 

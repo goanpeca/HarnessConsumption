@@ -63,6 +63,19 @@ struct ParsingTests {
         #expect(usage.session?.resetsAt != nil)
     }
 
+    @Test func parsesClaudeMonthlySpendWhenNoWindows() throws {
+        let json = #"""
+            {"five_hour":null,"seven_day":null,
+             "extra_usage":{"is_enabled":true,"monthly_limit":420000,"used_credits":60400.0,
+                            "utilization":14.38,"currency":"USD"}}
+            """#
+        let usage = try ClaudeUsageParser.parse(Data(json.utf8), plan: "enterprise", now: now)
+        #expect(usage.session == nil)
+        #expect(usage.weekly == nil)
+        #expect(usage.monthly?.usedPercent == 14.38)
+        #expect(usage.monthly?.resetsAt == Date(timeIntervalSince1970: 1_793_491_200))
+    }
+
     @Test func claudeIdleSessionHasNoReset() throws {
         let json = #"{"five_hour":{"utilization":0,"resets_at":null},"seven_day":{"utilization":3,"resets_at":null}}"#
         let usage = try ClaudeUsageParser.parse(Data(json.utf8), plan: nil, now: now)

@@ -45,10 +45,10 @@ Logs: `make logs` (subsystem `com.goanpeca.agentconsumption`).
    See [ARCHITECTURE.md](ARCHITECTURE.md). Enforced by `scripts/check-architecture.py`.
 2. **Parse at the boundary.** Decode API responses in `UsageParsing.swift` into typed values;
    inner code trusts types. Never probe JSON ad hoc.
-3. **Never log or print credentials.** Tokens are read and written only in `Keychain.swift` and
+3. **Never log or print credentials.** Tokens are read only in `Keychain.swift`, `DesktopAuth.swift` and
    the two clients. See [SECURITY.md](docs/SECURITY.md).
-4. **Codex is read-only.** Never refresh or rewrite Codex's token. Claude's rotated token must be
-   written back or Claude Code is signed out. See [RELIABILITY.md](docs/RELIABILITY.md).
+4. **Desktop apps only, read-only.** Use the Claude Desktop and ChatGPT/Codex desktop logins, never
+   the CLIs'. Never refresh or rewrite either token: the desktop apps own rotation. See [RELIABILITY.md](docs/RELIABILITY.md).
 5. **Failures are visible.** A failed fetch keeps the last reading and shows the error; missing
    holidays show a warning. Never show a stale number as current.
 6. **Swift files <= 300 lines.** Split by responsibility.
