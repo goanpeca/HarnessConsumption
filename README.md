@@ -8,7 +8,7 @@ the **Colombian work days** remaining.
 ```
 
 Click it for the 5-hour and weekly windows, reset times, today's share, and the month outlook.
-It checks every hour and notifies when you're over pace, a limit is almost used up (<10%), a limit
+It checks every hour by default (5 minutes to 2 hours in Settings) and notifies when you're over pace, a limit is almost used up (<10%), a limit
 resets, and with a morning summary on work days (after 08:00 Bogotá).
 
 ## Run
@@ -51,3 +51,9 @@ change. This is a personal tool, not something to distribute.
 
 Layout: `Sources/ConsumptionKit` is pure logic (tested, reusable for an iOS widget later);
 `Sources/AgentConsumption` is the app (clients, Keychain, SwiftUI `MenuBarExtra`, notifications).
+
+## Settings
+
+The **Settings** tab sets the country (or none), which weekdays count, whether public holidays are
+days off, and how often usage is checked. They apply to today's share, the over-pace check, the
+month outlook and the morning summary.

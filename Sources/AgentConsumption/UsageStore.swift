@@ -12,9 +12,11 @@ struct ProviderState {
 /// to the alert planner.
 @MainActor @Observable
 final class UsageStore {
-    static let refreshInterval: TimeInterval = 3600
+    private static let intervalKey = "refreshMinutes"
 
     private(set) var states: [Provider: ProviderState] = [:]
+    private(set) var refreshInterval = RefreshInterval(
+        minutes: UserDefaults.standard.object(forKey: "refreshMinutes") as? Int)
     private(set) var settings = WorkSettings.load()
     private(set) var countries: [Country] = []
     private(set) var calendar = WorkSettings().calendar(holidays: [])
@@ -43,13 +45,26 @@ final class UsageStore {
 
     func start() {
         guard timer == nil else { return }
-        let timer = Timer(timeInterval: Self.refreshInterval, repeats: true) { [weak self] _ in
+        scheduleTimer()
+        Task { await refresh() }
+    }
+
+    private func scheduleTimer() {
+        timer?.invalidate()
+        let timer = Timer(timeInterval: refreshInterval.seconds, repeats: true) { [weak self] _ in
             Task { @MainActor in await self?.refresh() }
         }
-        timer.tolerance = 60
+        timer.tolerance = min(60, refreshInterval.seconds / 10)
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
-        Task { await refresh() }
+    }
+
+    /// Changes how often usage is checked; the new schedule starts now.
+    func setRefreshInterval(_ interval: RefreshInterval) {
+        guard interval != refreshInterval else { return }
+        refreshInterval = interval
+        UserDefaults.standard.set(interval.rawValue, forKey: Self.intervalKey)
+        if timer != nil { scheduleTimer() }
     }
 
     /// - Parameter notify: false for `--dump`, which must not post or consume alerts.

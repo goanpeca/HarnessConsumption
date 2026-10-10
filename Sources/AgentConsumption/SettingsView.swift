@@ -44,10 +44,21 @@ struct SettingsView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
 
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Check usage").font(.headline)
+                Picker("Check usage", selection: interval) {
+                    ForEach(RefreshInterval.allCases) { Text("Every \($0.label)").tag($0) }
+                }
+                .labelsHidden()
+            }
+
             Text(settings.summary(countries: store.countries))
                 .font(.caption).foregroundStyle(.secondary)
 
-            Button("Reset to defaults") { store.update(WorkSettings()) }
+            Button("Reset to defaults") {
+                store.update(WorkSettings())
+                store.setRefreshInterval(.default)
+            }
         }
         .padding(.top, 4)
         .task { await store.loadCountries() }
@@ -70,6 +81,10 @@ struct SettingsView: View {
                 new.countryCode = code
                 store.update(new)
             })
+    }
+
+    private var interval: Binding<RefreshInterval> {
+        Binding(get: { store.refreshInterval }, set: { store.setRefreshInterval($0) })
     }
 
     private var skipHolidays: Binding<Bool> {

@@ -29,9 +29,8 @@ struct MenuView: View {
                 ScrollView { usage.padding(.horizontal, 12).padding(.vertical, 4) }
                     .frame(height: Self.paneHeight)
             case .settings:
-                SettingsView(store: store)
-                    .padding(.horizontal, 12)
-                    .frame(height: Self.paneHeight, alignment: .top)
+                ScrollView { SettingsView(store: store).padding(.horizontal, 12).padding(.vertical, 4) }
+                    .frame(height: Self.paneHeight)
             }
 
             Divider()
