@@ -1,10 +1,11 @@
 import Foundation
 import Testing
+
 @testable import ConsumptionKit
 
 struct PacingTests {
     let calendar = Fixtures.calendar
-    let now = Fixtures.bogota(10, 7, 9, 30) // Wed, window started 08:52 today
+    let now = Fixtures.bogota(10, 7, 9, 30)  // Wed, window started 08:52 today
 
     @Test func freshWeekSplitsAcrossFourWorkDays() throws {
         // Oct 7, 8, 9, 13 (12 is a holiday; 14 is the reset day).

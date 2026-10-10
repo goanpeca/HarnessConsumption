@@ -78,10 +78,12 @@ public enum CodexUsageParser {
         guard !raw.isEmpty else { throw UsageParseError.invalidPayload("Codex usage: no windows") }
         let windows = raw.map { window in
             let length = window.limit_window_seconds ?? WindowKind.weekly.defaultLength
-            let resetsAt = window.reset_at.map { Date(timeIntervalSince1970: $0) }
+            let resetsAt =
+                window.reset_at.map { Date(timeIntervalSince1970: $0) }
                 ?? window.reset_after_seconds.map { now.addingTimeInterval($0) }
-            return UsageWindow(kind: WindowKind(length: length), usedPercent: window.used_percent,
-                               resetsAt: resetsAt, length: length)
+            return UsageWindow(
+                kind: WindowKind(length: length), usedPercent: window.used_percent,
+                resetsAt: resetsAt, length: length)
         }
         return ProviderUsage(provider: .codex, plan: response.plan_type, windows: windows, fetchedAt: now)
     }

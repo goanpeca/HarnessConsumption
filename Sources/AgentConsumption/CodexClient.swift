@@ -11,7 +11,8 @@ struct CodexClient {
     let session: URLSession
 
     static var authFile: URL {
-        let home = ProcessInfo.processInfo.environment["CODEX_HOME"].map(URL.init(fileURLWithPath:))
+        let home =
+            ProcessInfo.processInfo.environment["CODEX_HOME"].map(URL.init(fileURLWithPath:))
             ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".codex")
         return home.appendingPathComponent("auth.json")
     }
@@ -27,7 +28,8 @@ struct CodexClient {
             let tokens: Tokens?
         }
         guard let data = try? Data(contentsOf: Self.authFile),
-              let auth = try? JSONDecoder().decode(Auth.self, from: data), let tokens = auth.tokens else {
+            let auth = try? JSONDecoder().decode(Auth.self, from: data), let tokens = auth.tokens
+        else {
             throw ProviderError.notSignedIn("Sign in to Codex with ChatGPT (`codex login`).")
         }
         var request = URLRequest(url: Self.usageURL)

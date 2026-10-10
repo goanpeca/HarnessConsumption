@@ -1,7 +1,7 @@
 import ConsumptionKit
 import Foundation
-import os
 import UserNotifications
+import os
 
 /// Delivers planner alerts as macOS notifications. Needs a bundled app (`make app`); under
 /// `swift run` there is no bundle, so alerts are only logged.
@@ -14,7 +14,8 @@ final class Notifier {
 
     func requestAuthorization() {
         center?.requestAuthorization(options: [.alert, .sound]) { [log] granted, error in
-            log.notice("notification permission granted=\(granted) error=\(String(describing: error), privacy: .public)")
+            log.notice(
+                "notification permission granted=\(granted) error=\(String(describing: error), privacy: .public)")
         }
     }
 

@@ -17,7 +17,8 @@ enum Keychain {
     static func account(service: String) throws -> String {
         let output = try run(["find-generic-password", "-s", service])
         guard let line = output.split(separator: "\n").first(where: { $0.contains("\"acct\"") }),
-              let value = line.split(separator: "=", maxSplits: 1).last else {
+            let value = line.split(separator: "=", maxSplits: 1).last
+        else {
             throw Failure(description: "No account on Keychain item \(service)")
         }
         return value.trimmingCharacters(in: CharacterSet(charactersIn: "\" "))

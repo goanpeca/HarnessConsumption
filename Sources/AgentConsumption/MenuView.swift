@@ -116,15 +116,19 @@ private struct MonthSection: View {
             ForEach(Provider.allCases) { provider in
                 let outlook = store.monthOutlook(provider)
                 if let projected = outlook.projectedPercentLeft, let daily = outlook.dailyShare {
-                    Text("\(provider.displayName): \(percent(projected)) of a week left this month "
-                        + "(\(outlook.weeklyResetsLeft ?? 0) resets) · \(percent(daily))/day")
-                        .font(.caption).foregroundStyle(.secondary)
+                    Text(
+                        "\(provider.displayName): \(percent(projected)) of a week left this month "
+                            + "(\(outlook.weeklyResetsLeft ?? 0) resets) · \(percent(daily))/day"
+                    )
+                    .font(.caption).foregroundStyle(.secondary)
                 }
             }
             if store.holidaysMissing {
-                Label("Couldn't load Colombian holidays; counting weekends only.",
-                      systemImage: "calendar.badge.exclamationmark")
-                    .font(.caption).foregroundStyle(.orange)
+                Label(
+                    "Couldn't load Colombian holidays; counting weekends only.",
+                    systemImage: "calendar.badge.exclamationmark"
+                )
+                .font(.caption).foregroundStyle(.orange)
             }
         }
     }

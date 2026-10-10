@@ -30,8 +30,10 @@ public struct AlertPlanner: Sendable {
 
     public init() {}
 
-    public func plan(usages: [ProviderUsage], calendar: WorkCalendar, now: Date,
-                     state: inout AlertState) -> [UsageAlert] {
+    public func plan(
+        usages: [ProviderUsage], calendar: WorkCalendar, now: Date,
+        state: inout AlertState
+    ) -> [UsageAlert] {
         var alerts: [UsageAlert] = []
         let today = Day(now, calendar: calendar.calendar)
 
@@ -42,42 +44,52 @@ public struct AlertPlanner: Sendable {
                 let stamp = window.resetsAt.map { String(Int($0.timeIntervalSince1970 / 60)) } ?? "none"
 
                 if let previous = state.lastResetAt[key], let reset = window.resetsAt,
-                   reset.timeIntervalSince(previous) > 300 {
+                    reset.timeIntervalSince(previous) > 300
+                {
                     let wasUsed = state.lastUsed[key] ?? 0
                     if window.kind == .weekly || wasUsed >= sessionResetMinimumUsed {
-                        alerts.append(UsageAlert(id: "reset.\(key).\(stamp)", kind: .reset,
-                                                 title: "\(label) limit reset",
-                                                 body: "\(format(window.remainingPercent)) available again."))
+                        alerts.append(
+                            UsageAlert(
+                                id: "reset.\(key).\(stamp)", kind: .reset,
+                                title: "\(label) limit reset",
+                                body: "\(format(window.remainingPercent)) available again."))
                     }
                 }
                 if let reset = window.resetsAt { state.lastResetAt[key] = reset }
                 state.lastUsed[key] = window.usedPercent
 
                 if window.remainingPercent < nearlyOutThreshold {
-                    alerts.append(UsageAlert(id: "low.\(key).\(stamp)", kind: .nearlyOut,
-                                             title: "\(label) limit almost used",
-                                             body: "Only \(format(window.remainingPercent)) left\(resetSuffix(window))."))
+                    alerts.append(
+                        UsageAlert(
+                            id: "low.\(key).\(stamp)", kind: .nearlyOut,
+                            title: "\(label) limit almost used",
+                            body: "Only \(format(window.remainingPercent)) left\(resetSuffix(window))."))
                 }
 
                 if window.kind == .weekly, calendar.isWorkDay(now),
-                   let pace = WindowPace.compute(window: window, calendar: calendar, now: now), pace.isOverPace {
-                    alerts.append(UsageAlert(
-                        id: "pace.\(key).\(today)", kind: .overPace,
-                        title: "\(usage.provider.displayName) is ahead of pace",
-                        body: "Used \(format(pace.usedPercent)) of the week; the even pace allows "
-                            + "\(format(pace.targetUsedByEndOfToday)) by tonight. "
-                            + "\(format(pace.todayShare))/day left over \(pace.workDaysLeft) work days."
-                    ))
+                    let pace = WindowPace.compute(window: window, calendar: calendar, now: now), pace.isOverPace
+                {
+                    alerts.append(
+                        UsageAlert(
+                            id: "pace.\(key).\(today)", kind: .overPace,
+                            title: "\(usage.provider.displayName) is ahead of pace",
+                            body: "Used \(format(pace.usedPercent)) of the week; the even pace allows "
+                                + "\(format(pace.targetUsedByEndOfToday)) by tonight. "
+                                + "\(format(pace.todayShare))/day left over \(pace.workDaysLeft) work days."
+                        ))
                 }
             }
         }
 
         if calendar.isWorkDay(now), calendar.calendar.component(.hour, from: now) >= morningHour,
-           state.lastSummaryDay != today, !usages.isEmpty {
+            state.lastSummaryDay != today, !usages.isEmpty
+        {
             state.lastSummaryDay = today
-            alerts.append(UsageAlert(id: "summary.\(today)", kind: .morningSummary,
-                                     title: "Today's AI budget",
-                                     body: summary(usages: usages, calendar: calendar, now: now)))
+            alerts.append(
+                UsageAlert(
+                    id: "summary.\(today)", kind: .morningSummary,
+                    title: "Today's AI budget",
+                    body: summary(usages: usages, calendar: calendar, now: now)))
         }
 
         let fresh = alerts.filter { !state.sentIDs.contains($0.id) }

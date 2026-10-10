@@ -109,8 +109,9 @@ final class UsageStore {
                 var line = "  \(window.kind.displayName): \(Int(window.remainingPercent.rounded()))% left"
                 if let reset = window.resetsAt { line += ", resets \(reset.formatted())" }
                 if window.kind == .weekly, let pace = pace(provider, .weekly) {
-                    line += String(format: ", today %.1f%% over %d work days%@", pace.todayShare, pace.workDaysLeft,
-                                   pace.isOverPace ? " (OVER PACE)" : "")
+                    line += String(
+                        format: ", today %.1f%% over %d work days%@", pace.todayShare, pace.workDaysLeft,
+                        pace.isOverPace ? " (OVER PACE)" : "")
                 }
                 lines.append(line)
             }
@@ -120,8 +121,9 @@ final class UsageStore {
             }
         }
         let month = monthOutlook(.claude)
-        lines.append("work days: \(month.workDaysLeft) of \(month.workDaysInMonth) left this month"
-            + (holidaysMissing ? " (holidays unavailable)" : ""))
+        lines.append(
+            "work days: \(month.workDaysLeft) of \(month.workDaysInMonth) left this month"
+                + (holidaysMissing ? " (holidays unavailable)" : ""))
         return lines.joined(separator: "\n")
     }
 
@@ -142,7 +144,8 @@ final class UsageStore {
 
     private func loadAlertState() -> AlertState {
         guard let data = UserDefaults.standard.data(forKey: Self.alertStateKey),
-              let state = try? JSONDecoder().decode(AlertState.self, from: data) else { return AlertState() }
+            let state = try? JSONDecoder().decode(AlertState.self, from: data)
+        else { return AlertState() }
         return state
     }
 

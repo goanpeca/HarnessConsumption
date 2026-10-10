@@ -17,6 +17,8 @@ resets, and with a morning summary on work days (after 08:00 Bogotá).
 make run        # build build/Agent Consumption.app and launch it
 make install    # copy to /Applications (add it to Login Items to start at login)
 make test       # logic tests
+make lint       # swift-format lint (strict)
+make ci         # lint + tests + app bundle, exactly what GitHub Actions runs
 .build/debug/AgentConsumption --dump   # print the current readings and exit (after `make build`)
 ```
 

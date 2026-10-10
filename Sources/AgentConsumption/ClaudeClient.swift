@@ -62,15 +62,17 @@ struct ClaudeClient {
             throw ProviderError.notSignedIn("Sign in to Claude Code (`claude`) on this Mac.")
         }
         guard let root = try JSONSerialization.jsonObject(with: Data(raw.utf8)) as? [String: Any],
-              let oauth = root["claudeAiOauth"] as? [String: Any],
-              let access = oauth["accessToken"] as? String,
-              let refresh = oauth["refreshToken"] as? String else {
+            let oauth = root["claudeAiOauth"] as? [String: Any],
+            let access = oauth["accessToken"] as? String,
+            let refresh = oauth["refreshToken"] as? String
+        else {
             throw ProviderError.notSignedIn("Claude Code has no claude.ai login. Run `claude` and /login.")
         }
         let expiresMs = (oauth["expiresAt"] as? NSNumber)?.doubleValue ?? 0
-        return Credentials(root: root, accessToken: access, refreshToken: refresh,
-                           expiresAt: Date(timeIntervalSince1970: expiresMs / 1000),
-                           plan: oauth["subscriptionType"] as? String)
+        return Credentials(
+            root: root, accessToken: access, refreshToken: refresh,
+            expiresAt: Date(timeIntervalSince1970: expiresMs / 1000),
+            plan: oauth["subscriptionType"] as? String)
     }
 
     private func refresh(_ old: Credentials) async throws -> Credentials {
@@ -94,7 +96,7 @@ struct ClaudeClient {
                 guard status == 200 else {
                     log.notice("token refresh at \(url.host() ?? "", privacy: .public) returned \(status)")
                     lastError = ProviderError.http(status, "token refresh failed; run `claude` once to sign in again")
-                    if status == 400 || status == 401 { break } // refresh token rejected; another host won't help
+                    if status == 400 || status == 401 { break }  // refresh token rejected; another host won't help
                     continue
                 }
                 let token = try JSONDecoder().decode(TokenResponse.self, from: data)
@@ -124,11 +126,13 @@ struct ClaudeClient {
         let data = try JSONSerialization.data(withJSONObject: root)
         let account = try Keychain.account(service: Self.service)
         do {
-            try Keychain.updatePassword(service: Self.service, account: account,
-                                        password: String(decoding: data, as: UTF8.self))
+            try Keychain.updatePassword(
+                service: Self.service, account: account,
+                password: String(decoding: data, as: UTF8.self))
         } catch {
             // The old refresh token is now spent, so Claude Code needs a fresh /login.
-            throw ProviderError.notSignedIn("Couldn't save the refreshed Claude token (\(error)). Run `claude` and /login.")
+            throw ProviderError.notSignedIn(
+                "Couldn't save the refreshed Claude token (\(error)). Run `claude` and /login.")
         }
     }
 }

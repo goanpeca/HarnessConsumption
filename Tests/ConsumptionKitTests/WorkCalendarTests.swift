@@ -1,15 +1,16 @@
 import Foundation
 import Testing
+
 @testable import ConsumptionKit
 
 struct WorkCalendarTests {
     let calendar = Fixtures.calendar
 
     @Test func weekendsAndHolidaysAreNotWorkDays() {
-        #expect(calendar.isWorkDay(Fixtures.bogota(10, 7)))   // Wednesday
-        #expect(!calendar.isWorkDay(Fixtures.bogota(10, 10))) // Saturday
-        #expect(!calendar.isWorkDay(Fixtures.bogota(10, 11))) // Sunday
-        #expect(!calendar.isWorkDay(Fixtures.bogota(10, 12))) // Día de la Raza (Monday)
+        #expect(calendar.isWorkDay(Fixtures.bogota(10, 7)))  // Wednesday
+        #expect(!calendar.isWorkDay(Fixtures.bogota(10, 10)))  // Saturday
+        #expect(!calendar.isWorkDay(Fixtures.bogota(10, 11)))  // Sunday
+        #expect(!calendar.isWorkDay(Fixtures.bogota(10, 12)))  // Día de la Raza (Monday)
     }
 
     @Test func octoberHas21WorkDays() {

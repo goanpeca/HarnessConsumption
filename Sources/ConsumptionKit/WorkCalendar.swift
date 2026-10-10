@@ -46,8 +46,8 @@ public struct WorkCalendar: Sendable {
     }
 
     public func isWorkDay(_ date: Date) -> Bool {
-        let weekday = calendar.component(.weekday, from: date) // 1 = Sunday
-        return (2 ... 6).contains(weekday) && !holidays.contains(Day(date, calendar: calendar))
+        let weekday = calendar.component(.weekday, from: date)  // 1 = Sunday
+        return (2...6).contains(weekday) && !holidays.contains(Day(date, calendar: calendar))
     }
 
     public func startOfDay(_ date: Date) -> Date { calendar.startOfDay(for: date) }

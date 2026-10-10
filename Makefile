@@ -1,9 +1,14 @@
 APP := build/Agent Consumption.app
 
-.PHONY: test build app run install clean logs
+.PHONY: test build app run install clean logs lint ci
 
 test:            ## Package tests (Swift Testing)
 	swift test
+
+lint:            ## Syntax-level checks that fail on unparsable or badly formed Swift
+	swift format lint --strict --recursive Sources Tests Package.swift --configuration .swift-format
+
+ci: lint test app   ## What CI runs
 
 build:           ## Debug build
 	swift build

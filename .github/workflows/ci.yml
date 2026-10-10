@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Swift version
+        run: swift --version
+      - name: Lint
+        run: make lint
+      - name: Test
+        run: swift test --parallel
+      - name: Build app bundle
+        run: make app
+      - name: Check bundle
+        run: |
+          codesign --verify --verbose "build/Agent Consumption.app"
+          plutil -lint "build/Agent Consumption.app/Contents/Info.plist"
