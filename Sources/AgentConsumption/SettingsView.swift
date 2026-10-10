@@ -4,14 +4,11 @@ import SwiftUI
 /// Which days count as available, shown in place of the usage panel.
 struct SettingsView: View {
     let store: UsageStore
-    let done: () -> Void
 
     private var settings: WorkSettings { store.settings }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Settings").font(.title3.bold())
-
             VStack(alignment: .leading, spacing: 6) {
                 Text("Country").font(.headline)
                 Picker("Country", selection: country) {
@@ -50,12 +47,9 @@ struct SettingsView: View {
             Text(settings.summary(countries: store.countries))
                 .font(.caption).foregroundStyle(.secondary)
 
-            HStack {
-                Button("Reset") { store.update(WorkSettings()) }
-                Spacer()
-                Button("Done", action: done).keyboardShortcut(.defaultAction)
-            }
+            Button("Reset to defaults") { store.update(WorkSettings()) }
         }
+        .padding(.top, 4)
         .task { await store.loadCountries() }
     }
 

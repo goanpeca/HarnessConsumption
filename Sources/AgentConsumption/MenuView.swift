@@ -1,20 +1,46 @@
 import ConsumptionKit
 import SwiftUI
 
+/// Container: a pane switch above the active pane, with a shared footer. Both panes have a fixed
+/// height so the window never resizes after it opens (a resize leaves it hanging below the menu bar).
 struct MenuView: View {
     let store: UsageStore
-    @State private var showSettings = false
+    @State private var pane: Pane = .usage
+
+    private static let paneHeight: CGFloat = 400
+
+    enum Pane: String, CaseIterable, Identifiable {
+        case usage = "Usage"
+        case settings = "Settings"
+        var id: String { rawValue }
+    }
 
     var body: some View {
-        Group {
-            if showSettings {
-                SettingsView(store: store) { showSettings = false }
-            } else {
-                usage
+        VStack(spacing: 8) {
+            Picker("", selection: $pane) {
+                ForEach(Pane.allCases) { Text($0.rawValue).tag($0) }
             }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .padding([.top, .horizontal], 12)
+
+            switch pane {
+            case .usage:
+                ScrollView { usage.padding(.horizontal, 12).padding(.vertical, 4) }
+                    .frame(height: Self.paneHeight)
+            case .settings:
+                SettingsView(store: store)
+                    .padding(.horizontal, 12)
+                    .frame(height: Self.paneHeight, alignment: .top)
+            }
+
+            Divider()
+            footer.padding([.bottom, .horizontal], 12)
         }
-        .padding(16)
-        .frame(width: 340)
+        .frame(width: 360)
+        // Always open on the usage pane, not wherever it was last left.
+        .onAppear { pane = .usage }
+        .onExitCommand { NSApp.keyWindow?.close() }
     }
 
     private var usage: some View {
@@ -24,8 +50,6 @@ struct MenuView: View {
                 Divider()
             }
             MonthSection(store: store)
-            Divider()
-            footer
         }
     }
 
@@ -40,13 +64,8 @@ struct MenuView: View {
                 Task { await store.refresh() }
             }
             .disabled(store.isRefreshing)
-            Button {
-                showSettings = true
-            } label: {
-                Image(systemName: "gearshape")
-            }
-            .help("Settings")
             Button("Quit") { NSApplication.shared.terminate(nil) }
+                .keyboardShortcut("q")
         }
     }
 }
