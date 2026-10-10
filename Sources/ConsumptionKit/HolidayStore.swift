@@ -62,7 +62,8 @@ public actor HolidayStore {
     }
 
     private func fetch(_ url: String) async throws -> Data {
-        let (data, response) = try await session.data(from: URL(string: url)!)
+        guard let url = URL(string: url) else { throw URLError(.badURL) }
+        let (data, response) = try await session.data(from: url)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
         return data
     }

@@ -18,3 +18,10 @@ struct RefreshIntervalTests {
         #expect(RefreshInterval.allCases.map(\.seconds).min() == 300)
     }
 }
+
+struct RefreshIntervalLabelTests {
+    @Test func labelsReadNaturally() {
+        #expect(
+            RefreshInterval.allCases.map(\.label) == ["5 minutes", "15 minutes", "30 minutes", "1 hour", "2 hours"])
+    }
+}

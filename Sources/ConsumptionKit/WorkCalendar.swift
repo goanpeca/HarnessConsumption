@@ -20,11 +20,13 @@ public struct Day: Hashable, Codable, Sendable, Comparable, CustomStringConverti
     }
 
     public init(_ date: Date, calendar: Calendar) {
-        let c = calendar.dateComponents([.year, .month, .day], from: date)
-        self.init(year: c.year!, month: c.month!, day: c.day!)
+        self.init(
+            year: calendar.component(.year, from: date),
+            month: calendar.component(.month, from: date),
+            day: calendar.component(.day, from: date))
     }
 
-    public static func < (lhs: Day, rhs: Day) -> Bool {
+    public static func < (lhs: Self, rhs: Self) -> Bool {
         (lhs.year, lhs.month, lhs.day) < (rhs.year, rhs.month, rhs.day)
     }
 
@@ -38,7 +40,7 @@ public struct WorkCalendar: Sendable {
     public let workWeekdays: Set<Int>
     public let calendar: Calendar
 
-    public static let colombia = TimeZone(identifier: "America/Bogota")!
+    public static let colombia = TimeZone(identifier: "America/Bogota") ?? .gmt
 
     public init(
         holidays: Set<Day>, workWeekdays: Set<Int> = WorkSettings.monToFri,
@@ -65,16 +67,16 @@ public struct WorkCalendar: Sendable {
         var count = 0
         while day < last {
             if isWorkDay(day) { count += 1 }
-            day = calendar.date(byAdding: .day, value: 1, to: day)!
+            day = calendar.date(byAdding: .day, value: 1, to: day) ?? last
         }
         return count
     }
 
     public func startOfMonth(_ date: Date) -> Date {
-        calendar.date(from: calendar.dateComponents([.year, .month], from: date))!
+        calendar.dateInterval(of: .month, for: date)?.start ?? calendar.startOfDay(for: date)
     }
 
     public func startOfNextMonth(_ date: Date) -> Date {
-        calendar.date(byAdding: .month, value: 1, to: startOfMonth(date))!
+        calendar.dateInterval(of: .month, for: date)?.end ?? startOfDay(date).addingTimeInterval(31 * 86_400)
     }
 }

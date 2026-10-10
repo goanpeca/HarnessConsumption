@@ -35,7 +35,7 @@ struct SettingsView: View {
                 HStack(spacing: 6) {
                     ForEach(WorkSettings.displayOrder, id: \.self) { weekday in
                         DayToggle(
-                            name: WorkSettings.weekdayNames[weekday]!,
+                            name: WorkSettings.weekdayName(weekday),
                             isOn: weekdayBinding(weekday),
                             isLast: settings.weekdays == [weekday])
                     }

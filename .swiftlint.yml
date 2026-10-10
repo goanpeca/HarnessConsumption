@@ -1,0 +1,76 @@
+# Strict SwiftLint; swift-format owns layout, SwiftLint owns correctness and style rules.
+included:
+  - Sources
+  - Tests
+  - Package.swift
+
+strict: true
+
+opt_in_rules:
+  - array_init
+  - closure_spacing
+  - contains_over_filter_count
+  - contains_over_first_not_nil
+  - discouraged_optional_boolean
+  - empty_count
+  - empty_string
+  - explicit_init
+  - fatal_error_message
+  - first_where
+  - flatmap_over_map_reduce
+  - force_unwrapping
+  - identical_operands
+  - joined_default_parameter
+  - last_where
+  - legacy_multiple
+  - lower_acl_than_parent
+  - modifier_order
+  - operator_usage_whitespace
+  - overridden_super_call
+  - prefer_self_in_static_references
+  - private_action
+  - reduce_into
+  - redundant_nil_coalescing
+  - sorted_first_last
+  - static_operator
+  - toggle_bool
+  - unneeded_parentheses_in_closure_argument
+  - unowned_variable_capture
+  - vertical_parameter_alignment_on_call
+  - yoda_condition
+
+disabled_rules:
+  - identifier_name        # snake_case keys mirror the JSON of the usage endpoints
+  - trailing_comma         # swift-format decides
+  - opening_brace          # swift-format decides
+  - line_length            # swift-format decides (120)
+  - multiline_parameters   # swift-format decides parameter layout
+  - optional_data_string_conversion  # String(decoding:) is intended for diagnostic text
+
+file_length:
+  warning: 250
+  error: 300               # same cap as scripts/check-file-size.sh
+
+function_body_length:
+  warning: 50
+  error: 80
+
+type_body_length:
+  warning: 250
+  error: 300
+
+nesting:
+  type_level: 2            # Decodable response shapes nest inside the parser that owns them
+
+cyclomatic_complexity:
+  warning: 12
+  error: 20
+
+custom_rules:
+  no_print:
+    name: "No print"
+    regex: '^\s*print\('
+    match_kinds: identifier
+    message: "Use the os Logger (subsystem com.goanpeca.agentconsumption); only App.swift prints for --dump."
+    severity: error
+    excluded: 'Sources/AgentConsumption/App\.swift'

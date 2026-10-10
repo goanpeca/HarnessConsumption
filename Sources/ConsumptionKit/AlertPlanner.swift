@@ -39,45 +39,7 @@ public struct AlertPlanner: Sendable {
 
         for usage in usages {
             for window in usage.windows {
-                let key = "\(usage.provider.rawValue).\(window.kind.rawValue)"
-                let label = "\(usage.provider.displayName) \(window.kind.displayName.lowercased())"
-                let stamp = window.resetsAt.map { String(Int($0.timeIntervalSince1970 / 60)) } ?? "none"
-
-                if let previous = state.lastResetAt[key], let reset = window.resetsAt,
-                    reset.timeIntervalSince(previous) > 300
-                {
-                    let wasUsed = state.lastUsed[key] ?? 0
-                    if window.kind == .weekly || wasUsed >= sessionResetMinimumUsed {
-                        alerts.append(
-                            UsageAlert(
-                                id: "reset.\(key).\(stamp)", kind: .reset,
-                                title: "\(label) limit reset",
-                                body: "\(format(window.remainingPercent)) available again."))
-                    }
-                }
-                if let reset = window.resetsAt { state.lastResetAt[key] = reset }
-                state.lastUsed[key] = window.usedPercent
-
-                if window.remainingPercent < nearlyOutThreshold {
-                    alerts.append(
-                        UsageAlert(
-                            id: "low.\(key).\(stamp)", kind: .nearlyOut,
-                            title: "\(label) limit almost used",
-                            body: "Only \(format(window.remainingPercent)) left\(resetSuffix(window))."))
-                }
-
-                if window.kind == .weekly, calendar.isWorkDay(now),
-                    let pace = WindowPace.compute(window: window, calendar: calendar, now: now), pace.isOverPace
-                {
-                    alerts.append(
-                        UsageAlert(
-                            id: "pace.\(key).\(today)", kind: .overPace,
-                            title: "\(usage.provider.displayName) is ahead of pace",
-                            body: "Used \(format(pace.usedPercent)) of the week; the even pace allows "
-                                + "\(format(pace.targetUsedByEndOfToday)) by tonight. "
-                                + "\(format(pace.todayShare))/day left over \(pace.workDaysLeft) work days."
-                        ))
-                }
+                alerts += windowAlerts(usage.provider, window, calendar: calendar, now: now, state: &state)
             }
         }
 
@@ -95,6 +57,53 @@ public struct AlertPlanner: Sendable {
         let fresh = alerts.filter { !state.sentIDs.contains($0.id) }
         state.sentIDs = Array((state.sentIDs + fresh.map(\.id)).suffix(200))
         return fresh
+    }
+
+    private func windowAlerts(
+        _ provider: Provider, _ window: UsageWindow, calendar: WorkCalendar, now: Date, state: inout AlertState
+    ) -> [UsageAlert] {
+        var alerts: [UsageAlert] = []
+        let key = "\(provider.rawValue).\(window.kind.rawValue)"
+        let label = "\(provider.displayName) \(window.kind.displayName.lowercased())"
+        let stamp = window.resetsAt.map { String(Int($0.timeIntervalSince1970 / 60)) } ?? "none"
+
+        if let previous = state.lastResetAt[key], let reset = window.resetsAt,
+            reset.timeIntervalSince(previous) > 300
+        {
+            let wasUsed = state.lastUsed[key] ?? 0
+            if window.kind == .weekly || wasUsed >= sessionResetMinimumUsed {
+                alerts.append(
+                    UsageAlert(
+                        id: "reset.\(key).\(stamp)", kind: .reset,
+                        title: "\(label) limit reset",
+                        body: "\(format(window.remainingPercent)) available again."))
+            }
+        }
+        if let reset = window.resetsAt { state.lastResetAt[key] = reset }
+        state.lastUsed[key] = window.usedPercent
+
+        if window.remainingPercent < nearlyOutThreshold {
+            alerts.append(
+                UsageAlert(
+                    id: "low.\(key).\(stamp)", kind: .nearlyOut,
+                    title: "\(label) limit almost used",
+                    body: "Only \(format(window.remainingPercent)) left\(resetSuffix(window))."))
+        }
+
+        if window.kind == .weekly, calendar.isWorkDay(now),
+            let pace = WindowPace.compute(window: window, calendar: calendar, now: now), pace.isOverPace
+        {
+            let today = Day(now, calendar: calendar.calendar)
+            alerts.append(
+                UsageAlert(
+                    id: "pace.\(key).\(today)", kind: .overPace,
+                    title: "\(provider.displayName) is ahead of pace",
+                    body: "Used \(format(pace.usedPercent)) of the week; the even pace allows "
+                        + "\(format(pace.targetUsedByEndOfToday)) by tonight. "
+                        + "\(format(pace.todayShare))/day left over \(pace.workDaysLeft) days."
+                ))
+        }
+        return alerts
     }
 
     func summary(usages: [ProviderUsage], calendar: WorkCalendar, now: Date) -> String {

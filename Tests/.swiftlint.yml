@@ -1,0 +1,3 @@
+# Tests may force-unwrap fixtures; a crash there is a failing test, not a user-facing bug.
+disabled_rules:
+  - force_unwrapping

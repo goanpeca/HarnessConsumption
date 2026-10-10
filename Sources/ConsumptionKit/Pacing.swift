@@ -19,7 +19,7 @@ public struct WindowPace: Sendable, Equatable {
 
     public var isOverPace: Bool { usedPercent > targetUsedByEndOfToday + 0.5 }
 
-    public static func compute(window: UsageWindow, calendar: WorkCalendar, now: Date) -> WindowPace? {
+    public static func compute(window: UsageWindow, calendar: WorkCalendar, now: Date) -> Self? {
         guard let reset = window.resetsAt else { return nil }
         let start = reset.addingTimeInterval(-window.length)
         let elapsed = calendar.workDays(from: start, to: now)
@@ -27,7 +27,7 @@ public struct WindowPace: Sendable, Equatable {
         let total = elapsed + left
         let countsToday = calendar.isWorkDay(now) && left > 0 ? 1 : 0
         let target = total == 0 ? 100 : 100 * Double(elapsed + countsToday) / Double(total)
-        return WindowPace(
+        return Self(
             remainingPercent: window.remainingPercent,
             totalWorkDays: total,
             elapsedWorkDays: elapsed,
@@ -58,10 +58,10 @@ public struct MonthOutlook: Sendable, Equatable {
 
     /// Counts only the part of each weekly window whose work days fall inside the month, so a
     /// window that straddles the month end contributes proportionally.
-    public static func compute(calendar: WorkCalendar, now: Date, weekly: UsageWindow?) -> MonthOutlook {
+    public static func compute(calendar: WorkCalendar, now: Date, weekly: UsageWindow?) -> Self {
         let monthStart = calendar.startOfMonth(now)
         let monthEnd = calendar.startOfNextMonth(now)
-        var outlook = MonthOutlook(
+        var outlook = Self(
             workDaysInMonth: calendar.workDays(from: monthStart, to: monthEnd),
             workDaysElapsed: calendar.workDays(from: monthStart, to: now),
             workDaysLeft: calendar.workDays(from: now, to: monthEnd),

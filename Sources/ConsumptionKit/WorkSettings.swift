@@ -10,7 +10,7 @@ public struct WorkSettings: Codable, Sendable, Equatable {
     /// When true, holidays of `countryCode` are not counted even on a counted weekday.
     public var skipHolidays: Bool
 
-    public init(weekdays: Set<Int> = WorkSettings.monToFri, countryCode: String? = "CO", skipHolidays: Bool = true) {
+    public init(weekdays: Set<Int> = Self.monToFri, countryCode: String? = "CO", skipHolidays: Bool = true) {
         self.weekdays = weekdays
         self.countryCode = countryCode
         self.skipHolidays = skipHolidays
@@ -43,29 +43,28 @@ public struct Country: Codable, Sendable, Equatable, Identifiable, Hashable {
 
 extension WorkSettings {
     /// Short names indexed by `Calendar` weekday (1 = Sunday).
-    public static let weekdayNames = [1: "Sun", 2: "Mon", 3: "Tue", 4: "Wed", 5: "Thu", 6: "Fri", 7: "Sat"]
+    private static let shortNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+    public static func weekdayName(_ weekday: Int) -> String {
+        shortNames.indices.contains(weekday - 1) ? shortNames[weekday - 1] : "?"
+    }
 
     /// e.g. "Mon–Fri, skipping Colombia holidays" or "Mon–Fri, Sat; holidays counted".
     public func summary(countries: [Country] = []) -> String {
-        let ordered = Self.displayOrder.filter(weekdays.contains)
-        var parts: [String] = []
-        var index = 0
-        while index < ordered.count {
-            var end = index
-            while end + 1 < ordered.count,
-                Self.displayOrder.firstIndex(of: ordered[end + 1])!
-                    == Self.displayOrder.firstIndex(of: ordered[end])! + 1
-            {
-                end += 1
+        // Positions in Monday-first order, grouped into runs of consecutive days.
+        let positions = Self.displayOrder.indices.filter { weekdays.contains(Self.displayOrder[$0]) }
+        var runs: [[Int]] = []
+        for position in positions {
+            if let last = runs.last?.last, last + 1 == position {
+                runs[runs.count - 1].append(position)
+            } else {
+                runs.append([position])
             }
-            let first = Self.weekdayNames[ordered[index]]!
-            parts.append(
-                end - index >= 2
-                    ? "\(first)–\(Self.weekdayNames[ordered[end]]!)"
-                    : ordered[index...end].map { Self.weekdayNames[$0]! }.joined(separator: ", "))
-            index = end + 1
         }
-        let days = parts.joined(separator: ", ")
+        let days = runs.map { run -> String in
+            let names = run.map { Self.weekdayName(Self.displayOrder[$0]) }
+            return run.count >= 3 ? "\(names[0])–\(names[names.count - 1])" : names.joined(separator: ", ")
+        }.joined(separator: ", ")
         guard let code = countryCode else { return "\(days); no holidays" }
         let name = countries.first { $0.code == code }?.name ?? code
         return skipHolidays ? "\(days), skipping \(name) holidays" : "\(days); \(name) holidays counted"

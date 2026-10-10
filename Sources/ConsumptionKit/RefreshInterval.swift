@@ -8,7 +8,7 @@ public enum RefreshInterval: Int, CaseIterable, Sendable, Identifiable {
     case hour1 = 60
     case hours2 = 120
 
-    public static let `default` = RefreshInterval.hour1
+    public static let `default` = Self.hour1
 
     public var id: Int { rawValue }
     public var seconds: TimeInterval { TimeInterval(rawValue * 60) }
@@ -23,6 +23,6 @@ public enum RefreshInterval: Int, CaseIterable, Sendable, Identifiable {
 
     /// Unknown stored values (e.g. from a future version) fall back to the default.
     public init(minutes: Int?) {
-        self = minutes.flatMap(RefreshInterval.init(rawValue:)) ?? .default
+        self = minutes.flatMap(Self.init(rawValue:)) ?? .default
     }
 }
