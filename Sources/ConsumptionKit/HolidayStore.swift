@@ -38,7 +38,15 @@ public actor HolidayStore {
         return list
     }
 
+    /// Country codes end up in a file name and a URL, so only ISO 3166-1 alpha-2 codes are allowed.
+    public static func isValidCountryCode(_ code: String) -> Bool {
+        code.count == 2 && code.utf8.allSatisfy { (65...90).contains($0) }
+    }
+
     private func load(country: String, year: Int) async throws -> Set<Day> {
+        guard Self.isValidCountryCode(country), (1900...2200).contains(year) else {
+            throw URLError(.badURL)
+        }
         let key = "\(country)-\(year)"
         if let cached = memory[key] { return cached }
         let file = directory.appendingPathComponent("holidays-\(key).json")

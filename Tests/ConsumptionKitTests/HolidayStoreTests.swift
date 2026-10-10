@@ -48,6 +48,19 @@ struct HolidayStoreTests {
         #expect(await store.holidays(country: "CO", years: [2026]).missingYears == [2026])
     }
 
+    @Test func rejectsCountryCodesThatCouldEscapeTheCacheOrURL() async throws {
+        #expect(HolidayStore.isValidCountryCode("CO"))
+        for bad in ["", "C", "COL", "co", "../", "C/", "C?", "1A", "../../x"] {
+            #expect(!HolidayStore.isValidCountryCode(bad), "\(bad)")
+        }
+        let directory = try tempDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = HolidayStore(directory: directory, session: offlineSession())
+        let result = await store.holidays(country: "../../x", years: [2026])
+        #expect(result.days.isEmpty)
+        #expect(result.missingYears == [2026])
+    }
+
     @Test func rejectsEmptyHolidayList() {
         #expect(throws: UsageParseError.self) { try HolidayStore.parse(Data("[]".utf8)) }
     }

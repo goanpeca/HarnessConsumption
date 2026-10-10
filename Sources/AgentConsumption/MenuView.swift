@@ -38,6 +38,7 @@ struct MenuView: View {
             footer.padding([.bottom, .horizontal], 12)
         }
         .frame(width: 360)
+        .pinnedBelowMenuBar()
         // Always open on the usage pane, not wherever it was last left.
         .onAppear { pane = .usage }
         .onExitCommand { NSApp.keyWindow?.close() }
