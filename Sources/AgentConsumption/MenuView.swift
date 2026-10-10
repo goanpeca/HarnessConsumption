@@ -3,8 +3,21 @@ import SwiftUI
 
 struct MenuView: View {
     let store: UsageStore
+    @State private var showSettings = false
 
     var body: some View {
+        Group {
+            if showSettings {
+                SettingsView(store: store) { showSettings = false }
+            } else {
+                usage
+            }
+        }
+        .padding(16)
+        .frame(width: 340)
+    }
+
+    private var usage: some View {
         VStack(alignment: .leading, spacing: 14) {
             ForEach(Provider.allCases) { provider in
                 ProviderSection(store: store, provider: provider)
@@ -14,8 +27,6 @@ struct MenuView: View {
             Divider()
             footer
         }
-        .padding(16)
-        .frame(width: 340)
     }
 
     private var footer: some View {
@@ -29,6 +40,12 @@ struct MenuView: View {
                 Task { await store.refresh() }
             }
             .disabled(store.isRefreshing)
+            Button {
+                showSettings = true
+            } label: {
+                Image(systemName: "gearshape")
+            }
+            .help("Settings")
             Button("Quit") { NSApplication.shared.terminate(nil) }
         }
     }
@@ -86,7 +103,7 @@ private struct WindowRow: View {
                 }
                 Spacer()
                 if window.kind == .weekly, let pace {
-                    Text("Today: \(percent(pace.todayShare)) · \(pace.workDaysLeft) work days")
+                    Text("Today: \(percent(pace.todayShare)) · \(days(pace.workDaysLeft)) left")
                         .foregroundStyle(pace.isOverPace ? .orange : .secondary)
                 }
             }
@@ -110,22 +127,24 @@ private struct MonthSection: View {
             HStack {
                 Text(Date.now.formatted(.dateTime.month(.wide).year())).font(.headline)
                 Spacer()
-                Text("\(outlook.workDaysLeft) of \(outlook.workDaysInMonth) work days left")
+                Text("\(outlook.workDaysLeft) of \(days(outlook.workDaysInMonth)) left")
                     .font(.subheadline).monospacedDigit()
             }
             ForEach(Provider.allCases) { provider in
                 let outlook = store.monthOutlook(provider)
                 if let projected = outlook.projectedPercentLeft, let daily = outlook.dailyShare {
                     Text(
-                        "\(provider.displayName): \(percent(projected)) of a week left this month "
-                            + "(\(outlook.weeklyResetsLeft ?? 0) resets) · \(percent(daily))/day"
+                        "\(provider.displayName): \(weeks(projected)) of quota left this month · "
+                            + "\(percent(daily))/day"
                     )
                     .font(.caption).foregroundStyle(.secondary)
                 }
             }
+            Text(store.settings.summary(countries: store.countries))
+                .font(.caption2).foregroundStyle(.tertiary)
             if store.holidaysMissing {
                 Label(
-                    "Couldn't load Colombian holidays; counting weekends only.",
+                    "Couldn't load holidays; counting without them.",
                     systemImage: "calendar.badge.exclamationmark"
                 )
                 .font(.caption).foregroundStyle(.orange)
@@ -136,4 +155,12 @@ private struct MonthSection: View {
 
 private func percent(_ value: Double) -> String {
     value < 10 ? String(format: "%.1f%%", value) : String(format: "%.0f%%", value)
+}
+
+private func days(_ count: Int) -> String { count == 1 ? "1 day" : "\(count) days" }
+
+/// 325% of one weekly window reads as "3.3 weeks".
+private func weeks(_ percent: Double) -> String {
+    let value = percent / 100
+    return value == 1 ? "1 week" : String(format: "%.1f weeks", value)
 }

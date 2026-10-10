@@ -1,26 +1,24 @@
 import Foundation
 
-/// Public holidays from the Nager.Date API (https://date.nager.at), cached on disk per year so the
-/// app works offline after the first fetch.
+/// Public holidays and the list of supported countries from the Nager.Date API
+/// (https://date.nager.at), cached on disk so the app works offline after the first fetch.
 public actor HolidayStore {
-    public let countryCode: String
     private let directory: URL
     private let session: URLSession
-    private var memory: [Int: Set<Day>] = [:]
+    private var memory: [String: Set<Day>] = [:]
 
-    public init(countryCode: String = "CO", directory: URL, session: URLSession = .shared) {
-        self.countryCode = countryCode
+    public init(directory: URL, session: URLSession = .shared) {
         self.directory = directory
         self.session = session
     }
 
     /// Holidays for the given years. Years that can be neither loaded nor fetched are missing from
     /// the result and listed in `missingYears`, so callers can say the count ignores holidays.
-    public func holidays(years: Set<Int>) async -> (days: Set<Day>, missingYears: Set<Int>) {
+    public func holidays(country: String, years: Set<Int>) async -> (days: Set<Day>, missingYears: Set<Int>) {
         var days = Set<Day>()
         var missing = Set<Int>()
         for year in years {
-            if let cached = try? await load(year: year) {
+            if let cached = try? await load(country: country, year: year) {
                 days.formUnion(cached)
             } else {
                 missing.insert(year)
@@ -29,21 +27,41 @@ public actor HolidayStore {
         return (days, missing)
     }
 
-    private func load(year: Int) async throws -> Set<Day> {
-        if let cached = memory[year] { return cached }
-        let file = directory.appendingPathComponent("holidays-\(countryCode)-\(year).json")
+    /// Countries Nager.Date has holidays for, sorted by name. Falls back to the cache, then to nil.
+    public func countries() async -> [Country]? {
+        let file = directory.appendingPathComponent("countries.json")
+        if let data = try? Data(contentsOf: file), let list = try? Self.parseCountries(data) { return list }
+        guard let data = try? await fetch("https://date.nager.at/api/v3/AvailableCountries"),
+            let list = try? Self.parseCountries(data)
+        else { return nil }
+        try? write(data, to: file)
+        return list
+    }
+
+    private func load(country: String, year: Int) async throws -> Set<Day> {
+        let key = "\(country)-\(year)"
+        if let cached = memory[key] { return cached }
+        let file = directory.appendingPathComponent("holidays-\(key).json")
         if let data = try? Data(contentsOf: file), let days = try? Self.parse(data) {
-            memory[year] = days
+            memory[key] = days
             return days
         }
-        let url = URL(string: "https://date.nager.at/api/v3/PublicHolidays/\(year)/\(countryCode)")!
-        let (data, response) = try await session.data(from: url)
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
+        let data = try await fetch("https://date.nager.at/api/v3/PublicHolidays/\(year)/\(country)")
         let days = try Self.parse(data)
+        try write(data, to: file)
+        memory[key] = days
+        return days
+    }
+
+    private func fetch(_ url: String) async throws -> Data {
+        let (data, response) = try await session.data(from: URL(string: url)!)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
+        return data
+    }
+
+    private func write(_ data: Data, to file: URL) throws {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try data.write(to: file, options: .atomic)
-        memory[year] = days
-        return days
     }
 
     public static func parse(_ data: Data) throws -> Set<Day> {
@@ -52,5 +70,16 @@ public actor HolidayStore {
         let days = Set(holidays.compactMap { Day(iso: $0.date) })
         guard !days.isEmpty else { throw UsageParseError.invalidPayload("no holidays") }
         return days
+    }
+
+    public static func parseCountries(_ data: Data) throws -> [Country] {
+        struct Entry: Decodable {
+            let countryCode: String
+            let name: String
+        }
+        let entries = try JSONDecoder().decode([Entry].self, from: data)
+        guard !entries.isEmpty else { throw UsageParseError.invalidPayload("no countries") }
+        return entries.map { Country(code: $0.countryCode, name: $0.name) }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 }

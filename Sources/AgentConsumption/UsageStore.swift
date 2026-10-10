@@ -15,7 +15,9 @@ final class UsageStore {
     static let refreshInterval: TimeInterval = 3600
 
     private(set) var states: [Provider: ProviderState] = [:]
-    private(set) var calendar = WorkCalendar(holidays: [])
+    private(set) var settings = WorkSettings.load()
+    private(set) var countries: [Country] = []
+    private(set) var calendar = WorkSettings().calendar(holidays: [])
     private(set) var holidaysMissing = false
     private(set) var lastRefresh: Date?
     private(set) var isRefreshing = false
@@ -24,6 +26,7 @@ final class UsageStore {
     private let codex: CodexClient
     private let holidays: HolidayStore
     private let notifier: Notifier
+    private var loadedHolidays = Set<Day>()
     private let planner = AlertPlanner()
     private let log = Logger(subsystem: "com.goanpeca.agentconsumption", category: "store")
     private var timer: Timer?
@@ -34,7 +37,7 @@ final class UsageStore {
         codex = CodexClient(session: session)
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("AgentConsumption")
-        holidays = HolidayStore(countryCode: "CO", directory: support)
+        holidays = HolidayStore(directory: support)
         self.notifier = notifier
     }
 
@@ -56,10 +59,7 @@ final class UsageStore {
         defer { isRefreshing = false }
         let now = Date()
 
-        let year = WorkCalendar(holidays: []).calendar.component(.year, from: now)
-        let (days, missing) = await holidays.holidays(years: [year, year + 1])
-        calendar = WorkCalendar(holidays: days)
-        holidaysMissing = missing.contains(year)
+        await reloadCalendar(now: now)
 
         async let claudeResult = Result { try await claude.fetch(now: now) }
         async let codexResult = Result { try await codex.fetch(now: now) }
@@ -73,6 +73,38 @@ final class UsageStore {
         let alerts = planner.plan(usages: usages, calendar: calendar, now: now, state: &alertState)
         saveAlertState(alertState)
         for alert in alerts { notifier.post(alert) }
+    }
+
+    /// Rebuilds the work calendar from the settings, fetching holidays for the chosen country.
+    private func reloadCalendar(now: Date = .now) async {
+        let current = settings
+        var days = Set<Day>()
+        var missing = false
+        if current.usesHolidays, let country = current.countryCode {
+            let year = calendar.calendar.component(.year, from: now)
+            let result = await holidays.holidays(country: country, years: [year, year + 1])
+            days = result.days
+            missing = result.missingYears.contains(year)
+        }
+        // Settings may have changed while holidays were loading; the newer call will rebuild.
+        guard current == settings else { return }
+        loadedHolidays = days
+        holidaysMissing = missing
+        calendar = current.calendar(holidays: days)
+    }
+
+    func loadCountries() async {
+        guard countries.isEmpty, let list = await holidays.countries() else { return }
+        countries = list
+    }
+
+    /// Applies new settings: the calendar updates at once, holidays follow when they load.
+    func update(_ new: WorkSettings) {
+        guard new != settings, !new.weekdays.isEmpty else { return }
+        settings = new
+        new.save()
+        calendar = new.calendar(holidays: new.countryCode == nil ? [] : loadedHolidays)
+        Task { await reloadCalendar() }
     }
 
     private func apply(_ provider: Provider, _ result: Result<ProviderUsage, Error>) {
@@ -122,7 +154,8 @@ final class UsageStore {
         }
         let month = monthOutlook(.claude)
         lines.append(
-            "work days: \(month.workDaysLeft) of \(month.workDaysInMonth) left this month"
+            "counted days: \(month.workDaysLeft) of \(month.workDaysInMonth) left this month "
+                + "(\(settings.summary(countries: countries)))"
                 + (holidaysMissing ? " (holidays unavailable)" : ""))
         return lines.joined(separator: "\n")
     }

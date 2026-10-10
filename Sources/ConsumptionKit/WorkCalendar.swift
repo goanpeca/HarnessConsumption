@@ -31,23 +31,29 @@ public struct Day: Hashable, Codable, Sendable, Comparable, CustomStringConverti
     public var description: String { String(format: "%04d-%02d-%02d", year, month, day) }
 }
 
-/// Monday-Friday minus public holidays, evaluated in one time zone.
+/// The counted weekdays minus holidays, evaluated in one time zone.
 public struct WorkCalendar: Sendable {
     public let holidays: Set<Day>
+    /// `Calendar` weekday numbers that count (1 = Sunday).
+    public let workWeekdays: Set<Int>
     public let calendar: Calendar
 
     public static let colombia = TimeZone(identifier: "America/Bogota")!
 
-    public init(holidays: Set<Day>, timeZone: TimeZone = WorkCalendar.colombia) {
+    public init(
+        holidays: Set<Day>, workWeekdays: Set<Int> = WorkSettings.monToFri,
+        timeZone: TimeZone = .current
+    ) {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
         self.holidays = holidays
+        self.workWeekdays = workWeekdays
         self.calendar = calendar
     }
 
     public func isWorkDay(_ date: Date) -> Bool {
-        let weekday = calendar.component(.weekday, from: date)  // 1 = Sunday
-        return (2...6).contains(weekday) && !holidays.contains(Day(date, calendar: calendar))
+        workWeekdays.contains(calendar.component(.weekday, from: date))
+            && !holidays.contains(Day(date, calendar: calendar))
     }
 
     public func startOfDay(_ date: Date) -> Date { calendar.startOfDay(for: date) }

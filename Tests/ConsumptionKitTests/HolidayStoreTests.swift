@@ -16,8 +16,8 @@ struct HolidayStoreTests {
         let json = #"[{"date":"2026-10-12"},{"date":"2026-11-02"}]"#
         try Data(json.utf8).write(to: directory.appendingPathComponent("holidays-CO-2026.json"))
 
-        let store = HolidayStore(countryCode: "CO", directory: directory, session: offlineSession())
-        let result = await store.holidays(years: [2026])
+        let store = HolidayStore(directory: directory, session: offlineSession())
+        let result = await store.holidays(country: "CO", years: [2026])
         #expect(result.days == [Day(year: 2026, month: 10, day: 12), Day(year: 2026, month: 11, day: 2)])
         #expect(result.missingYears.isEmpty)
     }
@@ -25,10 +25,27 @@ struct HolidayStoreTests {
     @Test func reportsYearsThatCannotBeLoaded() async throws {
         let directory = try tempDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
-        let store = HolidayStore(countryCode: "CO", directory: directory, session: offlineSession())
-        let result = await store.holidays(years: [2031])
+        let store = HolidayStore(directory: directory, session: offlineSession())
+        let result = await store.holidays(country: "CO", years: [2031])
         #expect(result.days.isEmpty)
         #expect(result.missingYears == [2031])
+    }
+
+    @Test func countriesAreCachedPerCountryAndSortedByName() async throws {
+        let directory = try tempDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let json = #"[{"countryCode":"US","name":"United States"},{"countryCode":"CO","name":"Colombia"}]"#
+        try Data(json.utf8).write(to: directory.appendingPathComponent("countries.json"))
+        try Data(#"[{"date":"2026-07-04"}]"#.utf8).write(to: directory.appendingPathComponent("holidays-US-2026.json"))
+
+        let store = HolidayStore(directory: directory, session: offlineSession())
+        #expect(
+            await store.countries() == [
+                Country(code: "CO", name: "Colombia"), Country(code: "US", name: "United States"),
+            ])
+        let us = await store.holidays(country: "US", years: [2026])
+        #expect(us.days == [Day(year: 2026, month: 7, day: 4)])
+        #expect(await store.holidays(country: "CO", years: [2026]).missingYears == [2026])
     }
 
     @Test func rejectsEmptyHolidayList() {

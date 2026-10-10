@@ -11,7 +11,7 @@ enum Fixtures {
             "2026-08-07", "2026-08-17", "2026-10-12", "2026-11-02", "2026-11-16", "2026-12-08", "2026-12-25",
         ].compactMap(Day.init(iso:)))
 
-    static let calendar = WorkCalendar(holidays: holidays2026)
+    static let calendar = WorkCalendar(holidays: holidays2026, timeZone: WorkCalendar.colombia)
 
     /// A wall-clock time in Bogotá.
     static func bogota(_ month: Int, _ day: Int, _ hour: Int = 9, _ minute: Int = 0, year: Int = 2026) -> Date {

@@ -10,6 +10,7 @@ struct AgentConsumptionApp: App {
         let store = UsageStore(notifier: notifier)
         if CommandLine.arguments.contains("--dump") {
             Task { @MainActor in
+                await store.loadCountries()
                 await store.refresh(notify: false)
                 print(store.report)
                 exit(0)
