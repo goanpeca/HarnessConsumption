@@ -4,6 +4,8 @@ import SwiftUI
 /// Which days count as available, shown in place of the usage panel.
 struct SettingsView: View {
     let store: UsageStore
+    @State private var opensAtLogin = LaunchAtLogin.isEnabled
+    @State private var loginError: String?
 
     private var settings: WorkSettings { store.settings }
 
@@ -52,6 +54,16 @@ struct SettingsView: View {
                 .labelsHidden()
             }
 
+            VStack(alignment: .leading, spacing: 6) {
+                Toggle("Open at login", isOn: loginBinding)
+                if let loginError {
+                    Text(loginError).font(.caption).foregroundStyle(.orange)
+                } else if LaunchAtLogin.needsApproval {
+                    Text("Approve Agent Consumption in System Settings > General > Login Items.")
+                        .font(.caption).foregroundStyle(.orange)
+                }
+            }
+
             Text(settings.summary(countries: store.countries))
                 .font(.caption).foregroundStyle(.secondary)
 
@@ -80,6 +92,20 @@ struct SettingsView: View {
                 var new = settings
                 new.countryCode = code
                 store.update(new)
+            })
+    }
+
+    private var loginBinding: Binding<Bool> {
+        Binding(
+            get: { opensAtLogin },
+            set: { value in
+                do {
+                    try LaunchAtLogin.set(value)
+                    loginError = nil
+                } catch {
+                    loginError = "Couldn't change login item: \(error.localizedDescription)"
+                }
+                opensAtLogin = LaunchAtLogin.isEnabled
             })
     }
 

@@ -10,7 +10,7 @@ Dependencies point downward only.
 | Layer | Module | May import | Holds |
 |---|---|---|---|
 | Logic | `ConsumptionKit` | Foundation | Models, response parsers, `WorkCalendar`, `WorkSettings`, pacing, `AlertPlanner`, `HolidayStore`, `RefreshInterval` |
-| Runtime and UI | `AgentConsumption` | `ConsumptionKit`, CommonCrypto, Foundation, Observation, os, UserNotifications; SwiftUI/AppKit in view files only | Keychain, `DesktopAuth`, Claude/Codex clients, `UsageStore`, `Notifier`, views |
+| Runtime and UI | `AgentConsumption` | `ConsumptionKit`, CommonCrypto, Foundation, Observation, os, ServiceManagement, UserNotifications; SwiftUI/AppKit in view files only | Keychain, `DesktopAuth`, `LaunchAtLogin`, Claude/Codex clients, `UsageStore`, `Notifier`, views |
 
 `ConsumptionKit` has no UI, logging, Keychain or notification code, so its tests run on any host.
 It returns plain values (`UsageAlert`, `WindowPace`, `MonthOutlook`) that the app presents.

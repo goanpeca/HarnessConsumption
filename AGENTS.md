@@ -6,8 +6,8 @@ The map for agents working in this repo. Keep it ~100 lines; detail lives in `do
 
 **Agent Consumption** is a macOS 14+ menu bar app (SwiftUI, Swift 6) that shows how much of your
 **Claude** and **Codex** plan limits is left, paced over the work days remaining. Work days follow
-settings: country holidays (or none), counted weekdays, check interval. It reuses the logins Claude
-Code and Codex already keep on the Mac and reads two **undocumented** endpoints, so it is a
+settings: country holidays (or none), counted weekdays, check interval. It reuses the logins the Claude
+Desktop and ChatGPT/Codex desktop apps already keep on the Mac and reads two **undocumented** endpoints, so it is a
 personal tool and must degrade visibly, never silently. Spec:
 [menu bar usage](docs/product-specs/menu-bar-usage.md).
 
