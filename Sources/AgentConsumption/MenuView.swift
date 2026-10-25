@@ -130,7 +130,7 @@ private struct WindowRow: View {
                     Text("No active window")
                 }
                 Spacer()
-                if window.kind == .weekly, let pace {
+                if window.kind != .session, let pace {
                     Text("Today \(percent(pace.todayShare)) · \(days(pace.workDaysLeft)) left")
                         .foregroundStyle(pace.isOverPace ? Color.orange : Color.secondary)
                 }
@@ -141,7 +141,7 @@ private struct WindowRow: View {
 
     private var tint: Color {
         if window.remainingPercent < 10 { return .red }
-        if window.kind == .weekly, pace?.isOverPace == true { return .orange }
+        if window.kind != .session, pace?.isOverPace == true { return .orange }
         return .accentColor
     }
 }

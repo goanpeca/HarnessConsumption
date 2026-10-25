@@ -4,6 +4,17 @@ public enum UsageParseError: Error, Equatable {
     case invalidPayload(String)
 }
 
+/// A monthly spend limit, as long as the calendar month that ends at `resetsAt` (so pacing counts
+/// the right work days).
+func monthlyWindow(usedPercent: Double, resetsAt: Date?) -> UsageWindow {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: "UTC") ?? .gmt
+    let length = resetsAt.flatMap { reset in
+        calendar.date(byAdding: .month, value: -1, to: reset).map { reset.timeIntervalSince($0) }
+    }
+    return UsageWindow(kind: .monthly, usedPercent: usedPercent, resetsAt: resetsAt, length: length)
+}
+
 /// Parses `GET https://api.anthropic.com/api/oauth/usage` (the endpoint behind Claude Code's `/usage`).
 public enum ClaudeUsageParser {
     struct Response: Decodable {
@@ -36,7 +47,7 @@ public enum ClaudeUsageParser {
             windows.append(window(.weekly, bucket))
         }
         if windows.isEmpty, let used = response.extra_usage?.utilization {
-            let window = UsageWindow(kind: .monthly, usedPercent: used, resetsAt: nextMonthStartUTC(after: now))
+            let window = monthlyWindow(usedPercent: used, resetsAt: nextMonthStartUTC(after: now))
             return ProviderUsage(provider: .claude, plan: plan, windows: [window], fetchedAt: now)
         }
         guard !windows.isEmpty else { throw UsageParseError.invalidPayload("Claude usage: no windows") }
@@ -107,7 +118,7 @@ public enum CodexUsageParser {
             let resetsAt =
                 limit.reset_at.map { Date(timeIntervalSince1970: $0) }
                 ?? limit.reset_after_seconds.map { now.addingTimeInterval($0) }
-            let window = UsageWindow(kind: .monthly, usedPercent: limit.used_percent, resetsAt: resetsAt)
+            let window = monthlyWindow(usedPercent: limit.used_percent, resetsAt: resetsAt)
             return ProviderUsage(provider: .codex, plan: response.plan_type, windows: [window], fetchedAt: now)
         }
         guard !raw.isEmpty else { throw UsageParseError.invalidPayload("Codex usage: no windows") }

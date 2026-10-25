@@ -55,4 +55,13 @@ struct PacingTests {
         #expect(outlook.workDaysLeft == 17)
         #expect(outlook.projectedPercentLeft == nil)
     }
+
+    @Test func spreadsMonthlyLimitOverWorkDaysLeft() throws {
+        let reset = Fixtures.bogota(11, 1, 0)
+        let window = UsageWindow(kind: .monthly, usedPercent: 40, resetsAt: reset, length: 31 * 86_400)
+        let pace = try #require(
+            WindowPace.compute(window: window, calendar: calendar, now: Fixtures.bogota(10, 26)))
+        #expect(pace.workDaysLeft == calendar.workDays(from: Fixtures.bogota(10, 26), to: reset))
+        #expect(abs(pace.todayShare - 60 / Double(pace.workDaysLeft)) < 0.001)
+    }
 }

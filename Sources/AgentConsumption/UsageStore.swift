@@ -155,7 +155,7 @@ final class UsageStore {
             for window in state?.usage?.windows ?? [] {
                 var line = "  \(window.kind.displayName): \(Int(window.remainingPercent.rounded()))% left"
                 if let reset = window.resetsAt { line += ", resets \(reset.formatted())" }
-                if window.kind == .weekly, let pace = pace(provider, .weekly) {
+                if window.kind != .session, let pace = pace(provider, window.kind) {
                     line += String(
                         format: ", today %.1f%% over %d work days%@", pace.todayShare, pace.workDaysLeft,
                         pace.isOverPace ? " (OVER PACE)" : "")

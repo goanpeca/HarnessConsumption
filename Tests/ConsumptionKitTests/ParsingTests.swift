@@ -45,7 +45,8 @@ struct ParsingTests {
         #expect(
             usage.monthly
                 == UsageWindow(
-                    kind: .monthly, usedPercent: 1, resetsAt: Date(timeIntervalSince1970: 1_793_491_200)))
+                    kind: .monthly, usedPercent: 1, resetsAt: Date(timeIntervalSince1970: 1_793_491_200),
+                    length: 31 * 86_400))
         #expect(usage.plan == "enterprise")
     }
 
@@ -74,6 +75,7 @@ struct ParsingTests {
         #expect(usage.weekly == nil)
         #expect(usage.monthly?.usedPercent == 14.38)
         #expect(usage.monthly?.resetsAt == Date(timeIntervalSince1970: 1_793_491_200))
+        #expect(usage.monthly?.length == 2_678_400.0)
     }
 
     @Test func claudeIdleSessionHasNoReset() throws {
