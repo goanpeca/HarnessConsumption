@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mutation testing for ConsumptionKit.
+"""Mutation testing for ConsumptionKit and the app's logic.
 
 Applies one small change at a time (a flipped comparison, a shifted constant, a swapped branch) to a
 temporary copy of the repo and runs the test suite. A mutant that makes the suite fail is killed; one
@@ -21,10 +21,11 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-KIT = "Sources/ConsumptionKit/"
+SOURCES = "Sources/"
 TIMEOUT = 900
 
-# (file, original text, mutated text): each original must appear in the file.
+# (file, original text, mutated text): each original must appear in the file. A bare file name is in
+# Sources/ConsumptionKit; an app file is written AgentConsumption/Name.swift.
 MUTANTS = [
     ("Pacing.swift", "elapsed + countsToday", "elapsed"),
     ("Pacing.swift", "usedPercent > targetUsedByEndOfToday + 0.5", "usedPercent > targetUsedByEndOfToday - 0.5"),
@@ -56,11 +57,47 @@ MUTANTS = [
     ("AlertPlanner.swift", "nearlyOutThreshold: Double = 10", "nearlyOutThreshold: Double = 20"),
     ("AlertPlanner.swift", "sessionResetMinimumUsed: Double = 50", "sessionResetMinimumUsed: Double = 0"),
     ("AlertPlanner.swift", "window.remainingPercent < nearlyOutThreshold", "window.remainingPercent <= nearlyOutThreshold"),
-    ("AlertPlanner.swift", "reset.timeIntervalSince(previous) > 300", "reset.timeIntervalSince(previous) > 0"),
+    ("AlertPlanner.swift", "reset.timeIntervalSince(previous) > Self.resetTolerance", "reset.timeIntervalSince(previous) > 0"),
+    ("AlertPlanner.swift", "abs(reset.timeIntervalSince(previous)) <= Self.resetTolerance", "abs(reset.timeIntervalSince(previous)) < 0"),
+    ("AlertPlanner.swift", "resetTolerance: TimeInterval = 300", "resetTolerance: TimeInterval = 5"),
     ("WorkSettings.swift", "forKey: .isConfigured) ?? true", "forKey: .isConfigured) ?? false"),
     ("WorkSettings.swift", "Self(countryCode: regionCode, isConfigured: false)", "Self(countryCode: regionCode, isConfigured: true)"),
     ("WorkSettings.swift", "countryCode != nil && skipHolidays", "countryCode != nil || skipHolidays"),
+    ("AgentConsumption/DesktopAuth.swift", ".filter { $0.expiresAt > now }", ".filter { $0.expiresAt >= now }"),
+    ("AgentConsumption/DesktopAuth.swift", ".max { $0.expiresAt < $1.expiresAt }", ".min { $0.expiresAt < $1.expiresAt }"),
+    ("AgentConsumption/DesktopAuth.swift", 'Data("v10".utf8)', 'Data("v11".utf8)'),
+    ("AgentConsumption/DesktopAuth.swift", "1003, &key", "1004, &key"),
+    ("AgentConsumption/DesktopAuth.swift", '"saltysalt"', '"saltysalu"'),
+    ("AgentConsumption/DesktopAuth.swift", "repeating: 0x20", "repeating: 0x21"),
+    ("AgentConsumption/DesktopAuth.swift", "input.count.isMultiple(of: kCCBlockSizeAES128)", "!input.count.isMultiple(of: kCCBlockSizeAES128)"),
+    ("AgentConsumption/ClaudeClient.swift", "status == 401 || status == 403", "status == 401"),
+    ("AgentConsumption/ClaudeClient.swift", '"oauth-2025-04-20", forHTTPHeaderField', '"oauth-2025-04-21", forHTTPHeaderField'),
+    ("AgentConsumption/ClaudeClient.swift", "guard status == 200", "guard status == 201"),
+    ("AgentConsumption/ClaudeClient.swift", '"Bearer \\(token.accessToken)"', '"Token \\(token.accessToken)"'),
+    ("AgentConsumption/CodexClient.swift", "status == 401 || status == 403", "status == 401"),
+    ("AgentConsumption/CodexClient.swift", "guard status == 200", "guard status == 201"),
+    ("AgentConsumption/CodexClient.swift", '"Bearer \\(tokens.access_token)"', '"Token \\(tokens.access_token)"'),
+    ("AgentConsumption/Keychain.swift", '!errText.contains("error")', 'errText.contains("error")'),
+    ("AgentConsumption/Keychain.swift", ".whitespacesAndNewlines", ".newlines"),
+    ("AgentConsumption/UsageStore.swift", "guard new != settings, !new.weekdays.isEmpty", "guard new != settings"),
+    ("AgentConsumption/UsageStore.swift", "new.totalUSD >= 0, new.codexLimitUSD >= 0", "new.totalUSD > 0, new.codexLimitUSD >= 0"),
+    ("AgentConsumption/UsageStore.swift", "guard countries.isEmpty, let list", "guard !countries.isEmpty, let list"),
+    ("AgentConsumption/UsageStore.swift", "guard current == settings else { return }", "guard current != settings else { return }"),
+    ("AgentConsumption/UsageStore.swift", "guard !isRefreshing else { return }", ""),
+    ("AgentConsumption/UsageStore+Report.swift", 'guard settings.isConfigured else { return "Set up" }', 'guard !settings.isConfigured else { return "Set up" }'),
+    ("AgentConsumption/UsageStore+Report.swift", 'pool.providers.count > 1 ? "◔"', 'pool.providers.count >= 1 ? "◔"'),
+    ("AgentConsumption/UsageStore+Report.swift", 'states[provider]?.error != nil ? "?" : ""', 'states[provider]?.error == nil ? "?" : ""'),
+    ("AgentConsumption/BudgetView.swift", ".toNearestOrAwayFromZero", ".toNearestOrEven"),
+    ("AgentConsumption/BudgetView.swift", "$0.providers.count > 1 })", "$0.providers.count > 0 })"),
+    ("AgentConsumption/BudgetView.swift", '"\\(Int(status.window.remainingPercent.rounded())) percent left"', '"\\(Int(status.window.remainingPercent.rounded())) percent used"'),
+    ("AgentConsumption/MenuView.swift", '"\\(Int(window.remainingPercent.rounded())) percent left"', '"\\(Int(window.remainingPercent.rounded())) percent used"'),
+    ("AgentConsumption/UsageLevelView.swift", '"controlAccentGreenColor"', '"controlAccentRedColor"'),
+    ("AgentConsumption/WorkSettings+Defaults.swift", "!settings.weekdays.isEmpty", "settings.weekdays.isEmpty"),
 ]
+
+
+def path_of(file: str) -> str:
+    return SOURCES + (file if "/" in file else "ConsumptionKit/" + file)
 
 
 def swift_test(cwd: Path) -> tuple[bool, bool]:
@@ -79,7 +116,7 @@ def main() -> int:
     parser.add_argument("--only", help="run only mutants whose file name contains this text")
     args = parser.parse_args()
 
-    stale = [f"{f}: {a!r}" for f, a, _ in MUTANTS if a not in (ROOT / KIT / f).read_text(encoding="utf-8")]
+    stale = [f"{f}: {a!r}" for f, a, _ in MUTANTS if a not in (ROOT / path_of(f)).read_text(encoding="utf-8")]
     if stale:
         print("mutation: these patterns no longer match the code. Update MUTANTS in scripts/mutation.py:")
         print("\n".join(f"  {s}" for s in stale))
@@ -101,7 +138,7 @@ def main() -> int:
         survivors: list[str] = []
         invalid: list[str] = []
         for file, original, mutated in mutants:
-            path = work / KIT / file
+            path = work / path_of(file)
             source = path.read_text(encoding="utf-8")
             path.write_text(source.replace(original, mutated, 1), encoding="utf-8")
             try:

@@ -72,12 +72,17 @@ struct ProviderSpendLine: View {
     let store: UsageStore
     let provider: Provider
 
-    var body: some View {
-        if let status = store.budgetPools.first(where: { $0.providers.count > 1 }),
+    /// Only a shared budget has a "share of the budget" to show; separate budgets already have a card each.
+    static func text(store: UsageStore, provider: Provider) -> String? {
+        guard let status = store.budgetPools.first(where: { $0.providers.count > 1 }),
             let spent = status.spentByProvider[provider]
-        {
-            Text("\(dollars(spent)) spent · \(Int((spent / status.totalUSD * 100).rounded()))% of the shared budget")
-                .font(.caption).foregroundStyle(.secondary)
+        else { return nil }
+        return "\(dollars(spent)) spent · \(Int((spent / status.totalUSD * 100).rounded()))% of the shared budget"
+    }
+
+    var body: some View {
+        if let text = Self.text(store: store, provider: provider) {
+            Text(text).font(.caption).foregroundStyle(.secondary)
         }
     }
 }

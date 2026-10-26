@@ -38,3 +38,7 @@ jobs:
 
       - name: Mutation testing
         run: make mutation
+
+      - name: Stability (the suite five times, weekly only)
+        if: ${{ github.event_name == 'schedule' }}
+        run: make stability

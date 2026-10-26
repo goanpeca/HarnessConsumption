@@ -73,7 +73,8 @@ Posture: **middle** (decided 2026-10-20 by goanpeca, who owns change management 
 5. **Failures are visible.** A failed fetch keeps the last reading and shows the error; missing
    holidays show a warning. Never show a stale number as current.
 6. **Swift files <= 300 lines.** Split by responsibility.
-7. **TDD with Swift Testing.** Failing `@Test` first. No XCTest.
+7. **TDD with Swift Testing.** Failing `@Test` first. No XCTest. Tests never touch real logins,
+   Keychain, defaults or network (`Sandbox`, `StubSession`; see [QUALITY_SCORE.md](docs/QUALITY_SCORE.md)).
 8. **Workflows are pinned and least-privilege.** `make security` (zizmor) must pass.
 
 ## Where to look

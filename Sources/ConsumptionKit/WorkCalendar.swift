@@ -50,8 +50,6 @@ public struct WorkCalendar: Sendable {
     public let workWeekdays: Set<Int>
     public let calendar: Calendar
 
-    public static let colombia = TimeZone(identifier: "America/Bogota") ?? .gmt
-
     public init(
         holidays: Set<Day>, workWeekdays: Set<Int> = WorkSettings.monToFri,
         timeZone: TimeZone = .current

@@ -28,6 +28,9 @@ public struct AlertPlanner: Sendable {
     /// Session-window resets only notify when the previous window was at least this full.
     public var sessionResetMinimumUsed: Double = 50
 
+    /// Reset times closer than this are the same window.
+    private static let resetTolerance: TimeInterval = 300
+
     public init() {}
 
     public func plan(
@@ -65,10 +68,18 @@ public struct AlertPlanner: Sendable {
         var alerts: [UsageAlert] = []
         let key = "\(provider.rawValue).\(window.kind.rawValue)"
         let label = "\(provider.displayName) \(window.kind.displayName.lowercased())"
-        let stamp = window.resetsAt.map { String(Int($0.timeIntervalSince1970 / 60)) } ?? "none"
+        // A window is identified by the first reset time seen for it: the API may report it a few seconds
+        // differently each time (or it is derived from "seconds left"), and that must not look like a new
+        // window, which would repeat an alert already sent.
+        let canonical = window.resetsAt.map { reset -> Date in
+            guard let previous = state.lastResetAt[key], abs(reset.timeIntervalSince(previous)) <= Self.resetTolerance
+            else { return reset }
+            return previous
+        }
+        let stamp = canonical.map { String(Int($0.timeIntervalSince1970 / 60)) } ?? "none"
 
         if let previous = state.lastResetAt[key], let reset = window.resetsAt,
-            reset.timeIntervalSince(previous) > 300
+            reset.timeIntervalSince(previous) > Self.resetTolerance
         {
             let wasUsed = state.lastUsed[key] ?? 0
             if window.kind == .weekly || wasUsed >= sessionResetMinimumUsed {
@@ -79,7 +90,7 @@ public struct AlertPlanner: Sendable {
                         body: "\(format(window.remainingPercent)) available again."))
             }
         }
-        if let reset = window.resetsAt { state.lastResetAt[key] = reset }
+        if let canonical { state.lastResetAt[key] = canonical }
         state.lastUsed[key] = window.usedPercent
 
         if window.remainingPercent < nearlyOutThreshold {

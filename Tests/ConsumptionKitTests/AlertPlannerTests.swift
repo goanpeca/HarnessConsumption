@@ -183,3 +183,56 @@ struct AlertSummaryTests {
             .contains { $0.kind == .morningSummary })
     }
 }
+
+struct AlertDedupTests {
+    let calendar = Fixtures.calendar
+    let planner = AlertPlanner()
+    let now = Fixtures.bogota(10, 7, 11)
+
+    private func nearlyOut(resetAt reset: Date) -> ProviderUsage {
+        let window = UsageWindow(kind: .weekly, usedPercent: 95, resetsAt: reset, length: 7 * 86_400)
+        return ProviderUsage(provider: .codex, plan: nil, windows: [window], fetchedAt: now)
+    }
+
+    private func alerts(_ reset: Date, state: inout AlertState) -> [UsageAlert] {
+        planner.plan(usages: [nearlyOut(resetAt: reset)], calendar: calendar, now: now, state: &state)
+            .filter { $0.kind == .nearlyOut }
+    }
+
+    @Test func aResetTimeThatWobblesAcrossAMinuteBoundaryDoesNotAlertAgain() {
+        var state = AlertState()
+        state.lastSummaryDay = Day(year: 2026, month: 10, day: 7)
+        // 5 seconds before a minute boundary, then 10 seconds later: the same window, a different minute.
+        let boundary = Fixtures.bogota(10, 14, 8, 52)
+        let first = boundary.addingTimeInterval(-5)
+        let second = boundary.addingTimeInterval(5)
+        #expect(Int(first.timeIntervalSince1970 / 60) != Int(second.timeIntervalSince1970 / 60))
+        #expect(alerts(first, state: &state).count == 1)
+        #expect(alerts(second, state: &state).isEmpty)
+        #expect(alerts(boundary.addingTimeInterval(-30), state: &state).isEmpty)
+    }
+
+    @Test func aGenuinelyNewWindowAlertsAgain() {
+        var state = AlertState()
+        state.lastSummaryDay = Day(year: 2026, month: 10, day: 7)
+        let reset = Fixtures.bogota(10, 14, 8, 52)
+        #expect(alerts(reset, state: &state).count == 1)
+        #expect(alerts(reset.addingTimeInterval(7 * 86_400), state: &state).count == 1)
+    }
+
+    @Test func aWindowThatMovesEarlierIsANewWindowToo() {
+        var state = AlertState()
+        state.lastSummaryDay = Day(year: 2026, month: 10, day: 7)
+        let reset = Fixtures.bogota(10, 14, 8, 52)
+        #expect(alerts(reset, state: &state).count == 1)
+        #expect(alerts(reset.addingTimeInterval(-3_600), state: &state).count == 1)
+    }
+
+    @Test func driftWithinTheToleranceNeverAccumulatesIntoAnAlert() {
+        var state = AlertState()
+        state.lastSummaryDay = Day(year: 2026, month: 10, day: 7)
+        let reset = Fixtures.bogota(10, 14, 8, 52)
+        #expect(alerts(reset, state: &state).count == 1)
+        for step in 1...8 { #expect(alerts(reset.addingTimeInterval(Double(step) * 20), state: &state).isEmpty) }
+    }
+}

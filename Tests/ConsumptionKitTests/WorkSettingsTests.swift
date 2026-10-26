@@ -5,7 +5,7 @@ import Testing
 
 struct WorkSettingsTests {
     let holidays = Fixtures.holidays2026
-    let bogota = WorkCalendar.colombia
+    let bogota = Fixtures.colombia
 
     func calendar(_ settings: WorkSettings) -> WorkCalendar {
         settings.calendar(holidays: holidays, timeZone: bogota)

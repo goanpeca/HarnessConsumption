@@ -90,9 +90,11 @@ today's share, the over-pace check, the month outlook and the morning summary.
 
 ## Testing
 
-`ConsumptionKit` is covered by Swift Testing tests with a coverage floor, and by mutation testing:
-`make mutation` changes the logic one small step at a time (a flipped comparison, a shifted
-constant) and requires a test to fail for each change. The mutation workflow runs on logic changes
+Both the `ConsumptionKit` logic and the app (clients, token decryption, store, views) are covered by
+Swift Testing tests with coverage floors, including seeded randomized invariants and parsers fed
+random and corrupted input. Tests never touch real logins, the Keychain or the network. Mutation
+testing goes further: `make mutation` changes the code one small step at a time (a flipped comparison,
+a shifted constant) and requires a test to fail for each change. The mutation workflow runs on logic changes
 and weekly. Why this runner and not Muter: [mutation-testing.md](docs/references/mutation-testing.md).
 
 ## Development

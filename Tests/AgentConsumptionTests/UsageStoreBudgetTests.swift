@@ -50,4 +50,35 @@ struct UsageStoreBudgetTests {
         #expect(
             reloaded.store.budget == BudgetSettings(totalUSD: 1234, claudeUSD: 10, codexLimitUSD: 20, isShared: false))
     }
+
+    @Test func aBudgetOfZeroIsAcceptedBecauseThatIsHowItIsTurnedOff() async {
+        let (claude, codex) = StoreHarness.spending(claude: 1_000, codexCredits: 10_000)
+        let harness = StoreHarness(budget: BudgetSettings(), claude: claude, codex: codex)
+        await harness.store.refresh(notify: false)
+        #expect(harness.store.budgetPools.count == 1)
+        harness.store.updateBudget(BudgetSettings(totalUSD: 0))
+        #expect(harness.store.budget.totalUSD == 0)
+        #expect(harness.store.budgetPools.isEmpty)
+        #expect(harness.store.menuBarTitle != "◔ 50%")
+        harness.store.updateBudget(BudgetSettings(totalUSD: 4000, codexLimitUSD: 0))
+        #expect(harness.store.budget.codexLimitUSD == 0)
+    }
+
+    @Test func eachProviderShowsItsShareOnlyWhenTheBudgetIsShared() async {
+        let (claude, codex) = StoreHarness.spending(claude: 800, codexCredits: 0)
+        let shared = StoreHarness(budget: BudgetSettings(totalUSD: 4000), claude: claude, codex: codex)
+        await shared.store.refresh(notify: false)
+        #expect(
+            ProviderSpendLine.text(store: shared.store, provider: .claude)
+                == "\(dollars(800)) spent · 20% of the shared budget")
+        #expect(ProviderSpendLine.text(store: shared.store, provider: .codex)?.hasPrefix("\(dollars(0)) spent") == true)
+        let separate = StoreHarness(budget: BudgetSettings(isShared: false), claude: claude, codex: codex)
+        await separate.store.refresh(notify: false)
+        #expect(ProviderSpendLine.text(store: separate.store, provider: .claude) == nil)
+        #expect(ProviderSpendLine.text(store: separate.store, provider: .codex) == nil)
+    }
+
+    @Test func noSpendLineBeforeAnyReading() {
+        #expect(ProviderSpendLine.text(store: StoreHarness().store, provider: .claude) == nil)
+    }
 }
