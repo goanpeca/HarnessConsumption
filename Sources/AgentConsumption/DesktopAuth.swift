@@ -13,19 +13,22 @@ enum DesktopAuth {
         let plan: String?
     }
 
-    static var configFile: URL {
-        FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Application Support/Claude/config.json")
+    static var configFile: URL { configFile(home: FileManager.default.homeDirectoryForCurrentUser) }
+
+    static func configFile(home: URL) -> URL {
+        home.appendingPathComponent("Library/Application Support/Claude/config.json")
     }
 
     /// The longest-lived unexpired token in the cache, or nil when Claude Desktop isn't signed in.
-    static func claudeToken(now: Date = .now) throws -> Token? {
+    static func claudeToken(
+        now: Date = .now, configFile: URL = Self.configFile,
+        secret: () throws -> String = { try Keychain.readPassword(service: Self.safeStorageService) }
+    ) throws -> Token? {
         guard let config = try? Data(contentsOf: configFile),
             let root = try JSONSerialization.jsonObject(with: config) as? [String: Any],
             let blob = root["oauth:tokenCacheV2"] as? String, let sealed = Data(base64Encoded: blob)
         else { return nil }
-        let secret = try Keychain.readPassword(service: safeStorageService)
-        let plain = try decrypt(sealed, secret: secret)
+        let plain = try decrypt(sealed, secret: try secret())
         guard let cache = try JSONSerialization.jsonObject(with: plain) as? [String: [String: Any]] else {
             return nil
         }
@@ -51,6 +54,9 @@ enum DesktopAuth {
             CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA1), 1003, &key, key.count)
         guard derived == kCCSuccess else { throw Keychain.Failure(description: "key derivation failed") }
         let input = [UInt8](sealed.dropFirst(prefix.count))
+        guard !input.isEmpty, input.count.isMultiple(of: kCCBlockSizeAES128) else {
+            throw Keychain.Failure(description: "ciphertext is not a whole number of AES blocks")
+        }
         let iv = [UInt8](repeating: 0x20, count: kCCBlockSizeAES128)
         var output = [UInt8](repeating: 0, count: input.count + kCCBlockSizeAES128)
         var written = 0

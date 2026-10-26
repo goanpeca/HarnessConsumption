@@ -9,14 +9,17 @@ enum Keychain {
         let description: String
     }
 
-    static func readPassword(service: String) throws -> String {
-        let output = try run(["find-generic-password", "-s", service, "-w"])
+    static let securityTool = URL(fileURLWithPath: "/usr/bin/security")
+
+    /// `tool` is only ever replaced in tests, which must not reach the real Keychain.
+    static func readPassword(service: String, tool: URL = Self.securityTool) throws -> String {
+        let output = try run(["find-generic-password", "-s", service, "-w"], tool: tool)
         return output.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private static func run(_ arguments: [String]) throws -> String {
+    private static func run(_ arguments: [String], tool: URL) throws -> String {
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/security")
+        process.executableURL = tool
         process.arguments = arguments
         let out = Pipe()
         let err = Pipe()

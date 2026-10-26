@@ -8,17 +8,17 @@ extension WorkSettings {
     static var suggestedRegion: String? { Locale.current.region?.identifier }
 
     /// A fresh install starts unconfigured, with the system region suggested.
-    static func load() -> WorkSettings {
-        guard let data = UserDefaults.standard.data(forKey: key),
+    static func load(from defaults: UserDefaults = .standard) -> WorkSettings {
+        guard let data = defaults.data(forKey: key),
             let settings = try? JSONDecoder().decode(WorkSettings.self, from: data),
             !settings.weekdays.isEmpty
         else { return .firstRun(regionCode: suggestedRegion) }
         return settings
     }
 
-    func save() {
+    func save(to defaults: UserDefaults = .standard) {
         if let data = try? JSONEncoder().encode(self) {
-            UserDefaults.standard.set(data, forKey: Self.key)
+            defaults.set(data, forKey: Self.key)
         }
     }
 }

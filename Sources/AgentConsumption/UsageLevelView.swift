@@ -25,7 +25,7 @@ extension UsageLevel {
 extension NSColor {
     /// AppKit's per-hue accent colors are what the picker shows but aren't in the public Swift API, so
     /// they are looked up by selector, with a public system color as the fallback.
-    fileprivate static func accent(_ name: String, fallback: NSColor) -> NSColor {
+    static func accent(_ name: String, fallback: NSColor) -> NSColor {
         let selector = Selector(name)
         guard responds(to: selector), let color = perform(selector)?.takeUnretainedValue() as? NSColor else {
             return fallback

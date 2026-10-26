@@ -15,8 +15,18 @@ public struct Day: Hashable, Codable, Sendable, Comparable, CustomStringConverti
     /// Parses `yyyy-MM-dd`.
     public init?(iso: String) {
         let parts = iso.prefix(10).split(separator: "-").compactMap { Int($0) }
-        guard parts.count == 3 else { return nil }
+        guard parts.count == 3, Self.exists(year: parts[0], month: parts[1], day: parts[2]) else { return nil }
         self.init(year: parts[0], month: parts[1], day: parts[2])
+    }
+
+    /// Whether the proleptic Gregorian calendar has that date (so not month 13, nor 30 February).
+    private static func exists(year: Int, month: Int, day: Int) -> Bool {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC") ?? .gmt
+        let parts = DateComponents(year: year, month: month, day: day, hour: 12)
+        guard let date = calendar.date(from: parts) else { return false }
+        return calendar.dateComponents([.year, .month, .day], from: date)
+            == DateComponents(year: year, month: month, day: day)
     }
 
     public init(_ date: Date, calendar: Calendar) {

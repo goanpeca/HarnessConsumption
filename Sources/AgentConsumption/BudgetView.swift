@@ -1,8 +1,9 @@
 import ConsumptionKit
 import SwiftUI
 
-func dollars(_ value: Double) -> String {
-    value.formatted(.currency(code: "USD").precision(.fractionLength(0)))
+func dollars(_ value: Double, locale: Locale = .current) -> String {
+    value.formatted(
+        .currency(code: "USD").precision(.fractionLength(0)).rounded(rule: .toNearestOrAwayFromZero).locale(locale))
 }
 
 /// One budget (shared, or a provider's own): what is left of it, and what to spend per work day.
@@ -53,7 +54,7 @@ struct BudgetSection: View {
         .accessibilityValue(spoken(status, pace: pace))
     }
 
-    private func spoken(_ status: BudgetStatus, pace: WindowPace?) -> String {
+    func spoken(_ status: BudgetStatus, pace: WindowPace?) -> String {
         var parts = [
             "\(Int(status.window.remainingPercent.rounded())) percent left",
             "\(dollars(status.remainingUSD)) of \(dollars(status.totalUSD)) left",

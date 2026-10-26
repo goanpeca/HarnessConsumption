@@ -113,3 +113,73 @@ struct AlertThresholdTests {
         #expect(alerts(shift: 400).contains { $0.kind == .reset })
     }
 }
+
+struct AlertSummaryTests {
+    let calendar = Fixtures.calendar
+    let planner = AlertPlanner()
+    let morning = Fixtures.bogota(10, 7, 9)
+
+    private func summary(_ usages: [ProviderUsage]) -> String? {
+        var state = AlertState()
+        return planner.plan(usages: usages, calendar: calendar, now: morning, state: &state)
+            .first { $0.kind == .morningSummary }?.body
+    }
+
+    private func usage(_ provider: Provider, _ windows: UsageWindow...) -> ProviderUsage {
+        ProviderUsage(provider: provider, plan: nil, windows: windows, fetchedAt: morning)
+    }
+
+    @Test func aMonthlyOnlyPlanSummarizesItsMonthlyLimit() {
+        let monthly = UsageWindow(kind: .monthly, usedPercent: 14, resetsAt: nil)
+        #expect(summary([usage(.claude, monthly)]) == "Claude: 86% of monthly limit left")
+    }
+
+    @Test func aProviderWithNoWeeklyOrMonthlyDataSaysSo() {
+        let session = UsageWindow(kind: .session, usedPercent: 10, resetsAt: nil)
+        #expect(summary([usage(.codex, session)]) == "Codex: no weekly data")
+    }
+
+    @Test func providersAreJoinedOnOneLine() {
+        let weekly = Fixtures.weekly(used: 0)
+        let monthly = UsageWindow(kind: .monthly, usedPercent: 50, resetsAt: nil)
+        let body = summary([usage(.claude, weekly), usage(.codex, monthly)])
+        #expect(body == "Claude: 100% of week left, 25% today · Codex: 50% of monthly limit left")
+    }
+
+    @Test func aWeeklyWithoutAResetDateOmitsTodaysShare() {
+        let weekly = UsageWindow(kind: .weekly, usedPercent: 20, resetsAt: nil)
+        #expect(summary([usage(.claude, weekly)]) == "Claude: 80% of week left")
+    }
+
+    @Test func noProvidersMeansNoSummary() {
+        var state = AlertState()
+        let alerts = planner.plan(usages: [], calendar: calendar, now: morning, state: &state)
+        #expect(alerts.filter { $0.kind == .morningSummary }.allSatisfy { $0.body.isEmpty })
+    }
+
+    @Test func theSummaryWaitsUntilTheMorningHour() {
+        var state = AlertState()
+        let early = Fixtures.bogota(10, 7, 7)
+        let alerts = planner.plan(
+            usages: [usage(.claude, Fixtures.weekly(used: 0))], calendar: calendar, now: early, state: &state)
+        #expect(!alerts.contains { $0.kind == .morningSummary })
+    }
+
+    @Test func aCustomMorningHourIsHonored() {
+        var custom = AlertPlanner()
+        custom.morningHour = 11
+        var state = AlertState()
+        let ten = Fixtures.bogota(10, 7, 10)
+        #expect(
+            !custom.plan(
+                usages: [usage(.claude, Fixtures.weekly(used: 0))], calendar: calendar, now: ten, state: &state
+            )
+            .contains { $0.kind == .morningSummary })
+        let noon = Fixtures.bogota(10, 7, 12)
+        #expect(
+            custom.plan(
+                usages: [usage(.claude, Fixtures.weekly(used: 0))], calendar: calendar, now: noon, state: &state
+            )
+            .contains { $0.kind == .morningSummary })
+    }
+}
