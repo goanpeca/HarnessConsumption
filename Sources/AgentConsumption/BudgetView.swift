@@ -1,8 +1,9 @@
 import ConsumptionKit
 import SwiftUI
 
-func dollars(_ value: Double) -> String {
-    value.formatted(.currency(code: "USD").precision(.fractionLength(0)))
+func dollars(_ value: Double, locale: Locale = .current) -> String {
+    value.formatted(
+        .currency(code: "USD").precision(.fractionLength(0)).rounded(rule: .toNearestOrAwayFromZero).locale(locale))
 }
 
 /// One budget (shared, or a provider's own): what is left of it, and what to spend per work day.
@@ -53,7 +54,7 @@ struct BudgetSection: View {
         .accessibilityValue(spoken(status, pace: pace))
     }
 
-    private func spoken(_ status: BudgetStatus, pace: WindowPace?) -> String {
+    func spoken(_ status: BudgetStatus, pace: WindowPace?) -> String {
         var parts = [
             "\(Int(status.window.remainingPercent.rounded())) percent left",
             "\(dollars(status.remainingUSD)) of \(dollars(status.totalUSD)) left",
@@ -71,12 +72,17 @@ struct ProviderSpendLine: View {
     let store: UsageStore
     let provider: Provider
 
-    var body: some View {
-        if let status = store.budgetPools.first(where: { $0.providers.count > 1 }),
+    /// Only a shared budget has a "share of the budget" to show; separate budgets already have a card each.
+    static func text(store: UsageStore, provider: Provider) -> String? {
+        guard let status = store.budgetPools.first(where: { $0.providers.count > 1 }),
             let spent = status.spentByProvider[provider]
-        {
-            Text("\(dollars(spent)) spent · \(Int((spent / status.totalUSD * 100).rounded()))% of the shared budget")
-                .font(.caption).foregroundStyle(.secondary)
+        else { return nil }
+        return "\(dollars(spent)) spent · \(Int((spent / status.totalUSD * 100).rounded()))% of the shared budget"
+    }
+
+    var body: some View {
+        if let text = Self.text(store: store, provider: provider) {
+            Text(text).font(.caption).foregroundStyle(.secondary)
         }
     }
 }

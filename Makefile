@@ -1,7 +1,7 @@
 APP := build/Agent Consumption.app
 SWIFT_SOURCES := Sources Tests Package.swift
 
-.PHONY: help bootstrap hooks test coverage mutation check lint format security build app run install logs ci clean
+.PHONY: help bootstrap hooks test coverage mutation stability check lint format security build app run install logs ci clean
 
 help:            ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
@@ -21,6 +21,9 @@ coverage:        ## Tests plus the coverage floors
 
 mutation:        ## Mutation testing of ConsumptionKit (slow; CI runs it weekly)
 	python3 scripts/mutation.py
+
+stability:       ## Run the suite in five host time zones, UTC+14 to UTC-8; any flaky or zone-bound test fails it
+	for zone in UTC Pacific/Kiritimati Pacific/Auckland Asia/Kolkata America/Los_Angeles; do TZ=$$zone swift test || exit 1; done
 
 check:           ## Harness checks: architecture, docs, file size
 	python3 scripts/check-architecture.py

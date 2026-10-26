@@ -5,16 +5,17 @@ import Foundation
 ///
 /// It never refreshes the token: Claude Desktop refreshes it while it runs, and rotating it here
 /// could sign Desktop out.
-struct ClaudeClient {
+struct ClaudeClient: Sendable {
     static let usageURL = URL(string: "https://api.anthropic.com/api/oauth/usage")!
     static let signInMessage = "Open Claude Desktop and sign in, then Refresh."
 
     let session: URLSession
+    var token: @Sendable (Date) throws -> DesktopAuth.Token? = { try DesktopAuth.claudeToken(now: $0) }
 
     func fetch(now: Date = .now) async throws -> ProviderUsage {
         let token: DesktopAuth.Token?
         do {
-            token = try DesktopAuth.claudeToken(now: now)
+            token = try self.token(now)
         } catch {
             throw ProviderError.notSignedIn("Couldn't read Claude Desktop's login (\(error)). Allow the prompt.")
         }

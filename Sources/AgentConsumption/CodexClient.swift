@@ -5,16 +5,21 @@ import Foundation
 ///
 /// It never refreshes the token: the desktop app refreshes it whenever it runs, and rotating it here
 /// could sign Codex out.
-struct CodexClient {
+struct CodexClient: Sendable {
     static let usageURL = URL(string: "https://chatgpt.com/backend-api/wham/usage")!
 
     let session: URLSession
+    var authFile: URL = Self.defaultAuthFile
 
-    static var authFile: URL {
-        let home =
-            ProcessInfo.processInfo.environment["CODEX_HOME"].map(URL.init(fileURLWithPath:))
-            ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".codex")
-        return home.appendingPathComponent("auth.json")
+    static var defaultAuthFile: URL { authFile() }
+
+    /// `$CODEX_HOME/auth.json`, or `~/.codex/auth.json` when it isn't set (or is empty).
+    static func authFile(
+        environment: [String: String] = ProcessInfo.processInfo.environment,
+        home: URL = FileManager.default.homeDirectoryForCurrentUser
+    ) -> URL {
+        let codexHome = environment["CODEX_HOME"].flatMap { $0.isEmpty ? nil : URL(fileURLWithPath: $0) }
+        return (codexHome ?? home.appendingPathComponent(".codex")).appendingPathComponent("auth.json")
     }
 
     func fetch(now: Date = .now) async throws -> ProviderUsage {
@@ -27,7 +32,7 @@ struct CodexClient {
             let auth_mode: String?
             let tokens: Tokens?
         }
-        guard let data = try? Data(contentsOf: Self.authFile),
+        guard let data = try? Data(contentsOf: authFile),
             let auth = try? JSONDecoder().decode(Auth.self, from: data), let tokens = auth.tokens
         else {
             throw ProviderError.notSignedIn("Open the ChatGPT/Codex desktop app and sign in, then Refresh.")

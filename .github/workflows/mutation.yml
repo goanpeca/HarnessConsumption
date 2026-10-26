@@ -1,6 +1,6 @@
 name: Mutation testing
 
-# Mutates ConsumptionKit one small change at a time and requires the tests to catch every change.
+# Mutates ConsumptionKit and the app's logic one small change at a time and requires the tests to catch every change.
 # Slow, so it runs on changes to the logic or its tests, weekly, and on demand. See
 # docs/references/mutation-testing.md.
 on:
@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - "Sources/ConsumptionKit/**"
+      - "Sources/AgentConsumption/**"
       - "Tests/**"
       - "scripts/mutation.py"
       - ".github/workflows/mutation.yml"
@@ -38,3 +39,7 @@ jobs:
 
       - name: Mutation testing
         run: make mutation
+
+      - name: Stability (the suite in five time zones, weekly only)
+        if: ${{ github.event_name == 'schedule' }}
+        run: make stability

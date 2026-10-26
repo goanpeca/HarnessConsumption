@@ -14,7 +14,7 @@ verifies the patterns still match, so a refactor can't silently turn the list st
 [mutation workflow](../../.github/workflows/mutation.yml) runs the full thing on changes to the logic
 or its tests, weekly, and on demand.
 
-Scope is `ConsumptionKit`, the pure logic. The app target has no tests to measure against.
+Scope is `ConsumptionKit` and the app target's logic (clients, `DesktopAuth`, `Keychain`, the store and its title and report, formatting). Entries for the app are written `AgentConsumption/Name.swift`. The entry point, notifications, window pinning and the login item have no tests to measure against.
 
 ## Adding a mutant
 

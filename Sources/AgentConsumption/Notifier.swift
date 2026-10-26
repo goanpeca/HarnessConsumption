@@ -3,10 +3,16 @@ import Foundation
 import UserNotifications
 import os
 
+/// Where the store hands the alerts the planner decided on.
+@MainActor
+protocol AlertDelivering: AnyObject {
+    func post(_ alert: UsageAlert)
+}
+
 /// Delivers planner alerts as macOS notifications. Needs a bundled app (`make app`); under
 /// `swift run` there is no bundle, so alerts are only logged.
 @MainActor
-final class Notifier {
+final class Notifier: AlertDelivering {
     private let log = Logger(subsystem: "com.goanpeca.agentconsumption", category: "notify")
     private var center: UNUserNotificationCenter? {
         Bundle.main.bundleIdentifier == nil ? nil : UNUserNotificationCenter.current()

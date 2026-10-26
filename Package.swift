@@ -12,5 +12,6 @@ let package = Package(
         .target(name: "ConsumptionKit"),
         .executableTarget(name: "AgentConsumption", dependencies: ["ConsumptionKit"]),
         .testTarget(name: "ConsumptionKitTests", dependencies: ["ConsumptionKit"]),
+        .testTarget(name: "AgentConsumptionTests", dependencies: ["AgentConsumption", "ConsumptionKit"]),
     ]
 )

@@ -5,22 +5,39 @@ change an area; `make coverage` enforces the floors below.
 
 | Module / area | Grade | Evidence | Gaps |
 |---|---|---|---|
-| `ConsumptionKit`: calendar, settings, pacing | A | 100% pacing, 93% total line coverage, real 2026 Colombian holidays as fixtures | |
-| `ConsumptionKit`: parsers | A | Real response shapes as tests, rejection of empty payloads | Endpoints are undocumented; re-verify [usage-endpoints.md](references/usage-endpoints.md) when readings look wrong |
-| `ConsumptionKit`: `AlertPlanner` | A | Once-only, reset, pace, summary covered | |
-| `ConsumptionKit`: `HolidayStore` | B | Cache, offline, validation covered | Network fetch path is only exercised by hand |
-| App: clients, Keychain | C | Verified by hand against live endpoints | No automated tests; [TD-3](tech-debt-tracker.md) |
-| App: store, notifier | C | `--dump` exercises the store | Timer and notification delivery untested |
-| App: views | B | Fixed-size panel, native chrome (SDK stamp), previews by hand | No UI tests |
+| `ConsumptionKit`: calendar, settings, pacing | A | 98% line coverage; real 2026 Colombian holidays as fixtures; DST, month and year edges; seeded invariants (shares add up, work days are additive) | |
+| `ConsumptionKit`: parsers | A | Real response shapes; every truncation and single-character mutation of a valid payload; random bytes never crash | Endpoints are undocumented; re-verify [usage-endpoints.md](references/usage-endpoints.md) when readings look wrong |
+| `ConsumptionKit`: `AlertPlanner`, budgets, levels | A | Once-only, reset, pace, summaries; budget bounds and level monotonicity as invariants; mutants killed | |
+| `ConsumptionKit`: `HolidayStore` | A | Cache, offline, validation, and the download path against a stubbed session | |
+| App: clients, `DesktopAuth`, `Keychain` | A | Stubbed `URLSession`, a golden safeStorage vector made outside this code base, fake `security` scripts; mutants killed | Never run against the live accounts in CI; verify by hand with `--dump` after endpoint changes |
+| App: store and settings persistence | A | Injected fetchers, notifier, defaults and directory; failure keeps the last reading; alerts fire once, across restarts | Timer cadence is not asserted |
+| App: views | B | Every screen rendered headlessly in each state; VoiceOver text asserted | No pixel snapshots (no dependency); layout is checked by eye |
+| App: `App`, `Notifier`, `PanelPinning`, `LaunchAtLogin` | C | Run only inside a real app | Not measured; [TD-11](tech-debt-tracker.md) |
 | Harness: scripts, CI, security | A | Negative-tested checks; zizmor `--pedantic`, actionlint, shellcheck, gitleaks clean | Branch protection is a repo setting ([TD-2](tech-debt-tracker.md)) |
 
 ## Floors
 
-- Mutation testing: every mutant in `scripts/mutation.py` is killed (`make mutation`; the mutation
-  workflow runs on logic changes and weekly). The list grows with the logic.
-- `ConsumptionKit` line coverage: 90% total, 75% per file (`scripts/check-coverage.py`).
+- Mutation testing: every mutant in `scripts/mutation.py` is killed, in `ConsumptionKit` and the app's
+  logic (`make mutation`; the mutation workflow runs on logic changes and weekly). The list grows with
+  the code.
+- `ConsumptionKit` line coverage: 97% total, 90% per file; the app target's logic and views: 92% total,
+  80% per file, leaving out the four files in the last table row (`scripts/check-coverage.py`).
+- Stability: the suite passes under five host time zones, UTC+14 to UTC-8 (`make stability`, weekly in
+  the mutation workflow), so a test that only works in one zone fails.
 - Swift files: 300 lines (`scripts/check-file-size.sh`); SwiftLint `--strict`; swift-format `--strict`.
 - Builds with `-warnings-as-errors`.
+
+## How tests are written
+
+- Swift Testing, failing test first; no XCTest, no third-party packages.
+- Tests never touch real logins, the Keychain, `UserDefaults.standard`, Application Support or the
+  network. They use `Sandbox` (temporary directory and defaults suite), `StubSession` (a `URLSession`
+  that answers from a closure) and a fake `security` script. `TestSafetyTests` fails if a test file
+  names a real one, and calls that would silently fall back to the real login.
+- Deterministic: fixed clocks, fixed time zones, pinned locales, and seeded randomness
+  (`SeededGenerator`; a failing round prints its seed). No sleeps; the suite passes in any order.
+- Production code gets a seam (an injected session, file, defaults or notifier) rather than a global
+  switch, with defaults that equal the real behavior.
 
 ## Process indicators
 

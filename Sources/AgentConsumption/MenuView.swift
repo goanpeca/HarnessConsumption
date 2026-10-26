@@ -119,7 +119,7 @@ private struct ProviderSection: View {
     }
 }
 
-private struct WindowRow: View {
+struct WindowRow: View {
     let window: UsageWindow
     let pace: WindowPace?
 
@@ -160,7 +160,7 @@ private struct WindowRow: View {
         window.resetsAt.map { "Resets \($0.formatted(.relative(presentation: .named)))" } ?? "No active window"
     }
 
-    private var spokenSummary: String {
+    var spokenSummary: String {
         var parts = [
             "\(Int(window.remainingPercent.rounded())) percent left", window.status(pace: pace), resetText,
         ]
