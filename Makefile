@@ -22,8 +22,8 @@ coverage:        ## Tests plus the coverage floors
 mutation:        ## Mutation testing of ConsumptionKit (slow; CI runs it weekly)
 	python3 scripts/mutation.py
 
-stability:       ## Run the whole suite five times; any flaky test fails it
-	for run in 1 2 3 4 5; do swift test || exit 1; done
+stability:       ## Run the suite in five host time zones, UTC+14 to UTC-8; any flaky or zone-bound test fails it
+	for zone in UTC Pacific/Kiritimati Pacific/Auckland Asia/Kolkata America/Los_Angeles; do TZ=$$zone swift test || exit 1; done
 
 check:           ## Harness checks: architecture, docs, file size
 	python3 scripts/check-architecture.py

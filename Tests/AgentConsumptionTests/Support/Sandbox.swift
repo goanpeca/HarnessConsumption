@@ -62,10 +62,27 @@ enum Seal {
 }
 
 enum Fixtures {
-    /// Noon UTC on the given day: far from midnight, so every time zone sees the same date.
-    static func date(_ year: Int, _ month: Int, _ day: Int) -> Date {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "UTC") ?? .gmt
-        return calendar.date(from: DateComponents(year: year, month: month, day: day, hour: 12)) ?? .distantPast
+    /// Noon on the given day in `calendar`'s own time zone, so a calendar built in any host zone agrees
+    /// about which day it is (noon UTC is already the next day at UTC+13).
+    static func date(_ year: Int, _ month: Int, _ day: Int, in calendar: Calendar) -> Date {
+        calendar.date(from: DateComponents(year: year, month: month, day: day, hour: 12)) ?? .distantPast
+    }
+}
+
+/// A one-way gate: `wait()` suspends until `open()` is called, whichever happens first. It lets a test hold
+/// code at a known point instead of hoping that two tasks overlap.
+actor Latch {
+    private var isOpen = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    func wait() async {
+        if isOpen { return }
+        await withCheckedContinuation { waiters.append($0) }
+    }
+
+    func open() {
+        isOpen = true
+        for waiter in waiters { waiter.resume() }
+        waiters = []
     }
 }

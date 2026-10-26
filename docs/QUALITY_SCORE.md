@@ -22,7 +22,8 @@ change an area; `make coverage` enforces the floors below.
   the code.
 - `ConsumptionKit` line coverage: 97% total, 90% per file; the app target's logic and views: 92% total,
   80% per file, leaving out the four files in the last table row (`scripts/check-coverage.py`).
-- Stability: the suite passes five runs in a row (`make stability`, weekly in the mutation workflow).
+- Stability: the suite passes under five host time zones, UTC+14 to UTC-8 (`make stability`, weekly in
+  the mutation workflow), so a test that only works in one zone fails.
 - Swift files: 300 lines (`scripts/check-file-size.sh`); SwiftLint `--strict`; swift-format `--strict`.
 - Builds with `-warnings-as-errors`.
 

@@ -9,7 +9,7 @@ struct UsageStoreSettingsTests {
     @Test func settingsPersistAndTheCalendarFollowsAtOnce() {
         let sandbox = Sandbox()
         let harness = StoreHarness(sandbox: sandbox)
-        let saturday = Fixtures.date(2026, 10, 10)
+        let saturday = Fixtures.date(2026, 10, 10, in: harness.store.calendar.calendar)
         #expect(!harness.store.calendar.isWorkDay(saturday))
         var everyDay = harness.store.settings
         everyDay.weekdays = Set(1...7)
@@ -37,7 +37,7 @@ struct UsageStoreSettingsTests {
         let harness = StoreHarness(settings: WorkSettings(countryCode: "CO", isConfigured: true))
         await harness.store.refresh(notify: false)
         #expect(!harness.store.holidaysMissing)
-        let columbusDay = Fixtures.date(2026, 10, 12)
+        let columbusDay = Fixtures.date(2026, 10, 12, in: harness.store.calendar.calendar)
         #expect(!harness.store.calendar.isWorkDay(columbusDay))
         #expect(harness.holidaySession.requests.contains { $0.url?.path.hasSuffix("/CO") == true })
     }
@@ -48,7 +48,7 @@ struct UsageStoreSettingsTests {
             holidayReply: { _ in .json("[]", status: 500) })
         await harness.store.refresh(notify: false)
         #expect(harness.store.holidaysMissing)
-        #expect(harness.store.calendar.isWorkDay(Fixtures.date(2026, 10, 12)))
+        #expect(harness.store.calendar.isWorkDay(Fixtures.date(2026, 10, 12, in: harness.store.calendar.calendar)))
     }
 
     @Test func noCountryMeansNoHolidayRequests() async {
@@ -62,7 +62,7 @@ struct UsageStoreSettingsTests {
         let harness = StoreHarness(settings: WorkSettings(countryCode: "CO", skipHolidays: false, isConfigured: true))
         await harness.store.refresh(notify: false)
         #expect(harness.holidaySession.requests.isEmpty)
-        #expect(harness.store.calendar.isWorkDay(Fixtures.date(2026, 10, 12)))
+        #expect(harness.store.calendar.isWorkDay(Fixtures.date(2026, 10, 12, in: harness.store.calendar.calendar)))
     }
 
     @Test func countriesLoadOnceAndAreKept() async {

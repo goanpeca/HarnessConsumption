@@ -14,11 +14,23 @@ struct UsageStoreRefreshTests {
         #expect(!harness.store.isRefreshing)
     }
 
-    @Test func overlappingRefreshesFetchOnlyOnce() async {
-        let harness = StoreHarness()
+    @Test func aRefreshStartedWhileAnotherIsRunningIsIgnored() async {
+        let started = Latch()
+        let release = Latch()
+        let harness = StoreHarness(claude: { now in
+            await started.open()
+            await release.wait()
+            return StoreHarness.usage(.claude, used: 38, now: now)
+        })
         async let first: Void = harness.store.refresh(notify: false)
-        async let second: Void = harness.store.refresh(notify: false)
-        _ = await (first, second)
+        await started.wait()  // the first refresh is now held inside its fetch
+        #expect(harness.store.isRefreshing)
+        await harness.store.refresh(notify: false)  // overlaps it, and must do nothing
+        #expect(harness.claudeCalls.value == 1)
+        #expect(harness.codexCalls.value == 1)
+        await release.open()
+        await first
+        #expect(!harness.store.isRefreshing)
         #expect(harness.claudeCalls.value == 1)
         #expect(harness.codexCalls.value == 1)
     }
