@@ -4,12 +4,15 @@ import Foundation
 extension WorkSettings {
     private static let key = "workSettings"
 
-    /// Defaults to Mon–Fri with Colombian holidays when nothing has been saved yet.
+    /// The system region, offered as the country until the user confirms their own.
+    static var suggestedRegion: String? { Locale.current.region?.identifier }
+
+    /// A fresh install starts unconfigured, with the system region suggested.
     static func load() -> WorkSettings {
         guard let data = UserDefaults.standard.data(forKey: key),
             let settings = try? JSONDecoder().decode(WorkSettings.self, from: data),
             !settings.weekdays.isEmpty
-        else { return WorkSettings() }
+        else { return .firstRun(regionCode: suggestedRegion) }
         return settings
     }
 

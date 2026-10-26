@@ -11,8 +11,8 @@ struct WorkSettingsTests {
         settings.calendar(holidays: holidays, timeZone: bogota)
     }
 
-    @Test func defaultIsMonToFriWithColombianHolidays() {
-        let calendar = calendar(WorkSettings())
+    @Test func aCountryOfColombiaSkipsItsHolidays() {
+        let calendar = calendar(WorkSettings(countryCode: "CO"))
         #expect(calendar.workDays(from: Fixtures.bogota(10, 1), to: Fixtures.bogota(11, 1)) == 21)
     }
 
@@ -29,7 +29,7 @@ struct WorkSettingsTests {
     }
 
     @Test func saturdaysWithoutSundaysOrHolidays() {
-        let settings = WorkSettings(weekdays: WorkSettings.monToFri.union([7]))
+        let settings = WorkSettings(weekdays: WorkSettings.monToFri.union([7]), countryCode: "CO")
         let calendar = calendar(settings)
         #expect(calendar.isWorkDay(Fixtures.bogota(10, 10)))  // Saturday
         #expect(!calendar.isWorkDay(Fixtures.bogota(10, 11)))  // Sunday
@@ -46,7 +46,7 @@ struct WorkSettingsTests {
     @Test func pacingFollowsTheSettings() throws {
         // Window Oct 7 (Wed) to the reset on Oct 14; counting Saturdays adds Oct 10.
         let now = Fixtures.bogota(10, 7, 9, 30)
-        let withSaturday = calendar(WorkSettings(weekdays: WorkSettings.monToFri.union([7])))
+        let withSaturday = calendar(WorkSettings(weekdays: WorkSettings.monToFri.union([7]), countryCode: "CO"))
         let pace = try #require(WindowPace.compute(window: Fixtures.weekly(used: 0), calendar: withSaturday, now: now))
         #expect(pace.workDaysLeft == 5)
         #expect(pace.todayShare == 20)
@@ -63,30 +63,71 @@ struct WorkSettingsSummaryTests {
     let countries = [Country(code: "CO", name: "Colombia")]
 
     @Test func defaultSummary() {
-        #expect(WorkSettings().summary(countries: countries) == "Mon–Fri, skipping Colombia holidays")
+        #expect(
+            WorkSettings(countryCode: "CO").summary(countries: countries) == "Mon–Fri, skipping Colombia holidays")
     }
 
     @Test func runsAndSingleDays() {
-        #expect(WorkSettings(weekdays: [2, 3, 4, 5, 6, 7]).summary(countries: countries).hasPrefix("Mon–Sat,"))
-        #expect(WorkSettings(weekdays: [2, 7]).summary(countries: countries).hasPrefix("Mon, Sat,"))
-        #expect(WorkSettings(weekdays: [1]).summary(countries: countries).hasPrefix("Sun,"))
-        #expect(WorkSettings(weekdays: [2, 3]).summary(countries: countries).hasPrefix("Mon, Tue,"))
+        #expect(
+            WorkSettings(weekdays: [2, 3, 4, 5, 6, 7], countryCode: "CO").summary(countries: countries).hasPrefix(
+                "Mon–Sat,"))
+        #expect(WorkSettings(weekdays: [2, 7], countryCode: "CO").summary(countries: countries).hasPrefix("Mon, Sat,"))
+        #expect(WorkSettings(weekdays: [1], countryCode: "CO").summary(countries: countries).hasPrefix("Sun,"))
+        #expect(WorkSettings(weekdays: [2, 3], countryCode: "CO").summary(countries: countries).hasPrefix("Mon, Tue,"))
     }
 
     @Test func sundayStartsItsOwnRunAfterSaturday() {
         // Display order is Monday first, so Sat and Sun are neighbours.
-        #expect(WorkSettings(weekdays: [6, 7, 1]).summary(countries: countries).hasPrefix("Fri–Sun,"))
+        #expect(
+            WorkSettings(weekdays: [6, 7, 1], countryCode: "CO").summary(countries: countries).hasPrefix("Fri–Sun,"))
     }
 
     @Test func holidayWording() {
         #expect(WorkSettings(countryCode: nil).summary() == "Mon–Fri; no holidays")
-        #expect(WorkSettings(skipHolidays: false).summary(countries: countries) == "Mon–Fri; Colombia holidays counted")
-        #expect(WorkSettings().summary() == "Mon–Fri, skipping CO holidays")
+        #expect(
+            WorkSettings(countryCode: "CO", skipHolidays: false).summary(countries: countries)
+                == "Mon–Fri; Colombia holidays counted")
+        #expect(WorkSettings(countryCode: "CO").summary() == "Mon–Fri, skipping CO holidays")
     }
 
     @Test func weekdayNames() {
         #expect(WorkSettings.weekdayName(1) == "Sun")
         #expect(WorkSettings.weekdayName(7) == "Sat")
         #expect(WorkSettings.weekdayName(0) == "?")
+    }
+}
+
+struct FirstRunTests {
+    @Test func aPlainSettingsValueHasNoCountryAndIsConfigured() {
+        let settings = WorkSettings()
+        #expect(settings.countryCode == nil)
+        #expect(settings.isConfigured)
+    }
+
+    @Test func firstRunSuggestsTheSystemRegionButIsNotConfigured() {
+        let settings = WorkSettings.firstRun(regionCode: "DE")
+        #expect(settings.countryCode == "DE")
+        #expect(!settings.isConfigured)
+        #expect(settings.weekdays == WorkSettings.monToFri)
+        #expect(settings.skipHolidays)
+    }
+
+    @Test func firstRunWithoutARegionHasNoCountry() {
+        #expect(WorkSettings.firstRun(regionCode: nil).countryCode == nil)
+        #expect(!WorkSettings.firstRun(regionCode: nil).isConfigured)
+    }
+
+    @Test func settingsSavedBeforeSetupExistedCountAsConfigured() throws {
+        let legacy = Data(#"{"weekdays":[2,3,4,5,6],"countryCode":"CO","skipHolidays":true}"#.utf8)
+        let settings = try JSONDecoder().decode(WorkSettings.self, from: legacy)
+        #expect(settings.isConfigured)
+        #expect(settings.countryCode == "CO")
+    }
+
+    @Test func theConfiguredFlagSurvivesARoundTrip() throws {
+        let fresh = WorkSettings.firstRun(regionCode: "US")
+        let decoded = try JSONDecoder().decode(WorkSettings.self, from: JSONEncoder().encode(fresh))
+        #expect(decoded == fresh)
+        #expect(!decoded.isConfigured)
     }
 }

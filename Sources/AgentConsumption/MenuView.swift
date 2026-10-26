@@ -12,21 +12,27 @@ struct MenuView: View {
     enum Pane: String, CaseIterable, Identifiable {
         case usage = "Usage"
         case settings = "Settings"
+        case setup = "Setup"
         var id: String { rawValue }
     }
 
     var body: some View {
         VStack(spacing: 8) {
-            Picker("", selection: $pane) {
-                ForEach(Pane.allCases) { Text($0.rawValue).tag($0) }
+            if store.settings.isConfigured {
+                Picker("", selection: $pane) {
+                    ForEach(Pane.allCases.filter { $0 != .setup }) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .padding([.top, .horizontal], 14)
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .padding([.top, .horizontal], 14)
 
-            switch pane {
+            switch store.settings.isConfigured ? pane : .setup {
             case .usage:
                 ScrollView { usage.padding(.horizontal, 14).padding(.vertical, 6) }
+                    .frame(height: Self.paneHeight)
+            case .setup:
+                ScrollView { SetupView(store: store).padding(.horizontal, 14).padding(.vertical, 14) }
                     .frame(height: Self.paneHeight)
             case .settings:
                 ScrollView { SettingsView(store: store).padding(.horizontal, 14).padding(.vertical, 6) }

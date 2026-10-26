@@ -31,9 +31,16 @@ orange with the fix (for example "open Claude Desktop"). Footer: updated time, R
 - **Treat public holidays as days off**: off when no country.
 - **Days that count**: Mon–Sun toggles (default Mon–Fri); at least one stays on.
 - **Check usage**: every 5, 15, 30 minutes, 1 or 2 hours (default 1 hour).
-- **Reset to defaults**: Mon–Fri, Colombia, holidays off days, hourly.
+- **Reset to defaults**: Mon–Fri, the Mac's region as the country, holidays off days, hourly.
 
-Defaults: Colombia, Mon–Fri, holidays skipped, hourly.
+Defaults: the Mac's region as the country, Mon–Fri, holidays skipped, hourly.
+
+## First launch
+
+Nothing assumes a country. A fresh install shows a Setup screen instead of the usage and settings
+tabs, and the menu bar reads "Set up". It suggests the Mac's region (or none when it has none),
+and Continue confirms it; the tabs appear after that. Settings saved by earlier versions count as
+confirmed, so they never see Setup.
 
 ## Notifications
 

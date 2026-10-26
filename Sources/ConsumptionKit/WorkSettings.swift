@@ -9,11 +9,31 @@ public struct WorkSettings: Codable, Sendable, Equatable {
     public var countryCode: String?
     /// When true, holidays of `countryCode` are not counted even on a counted weekday.
     public var skipHolidays: Bool
+    /// False until the user confirms their settings on first launch.
+    public var isConfigured: Bool
 
-    public init(weekdays: Set<Int> = Self.monToFri, countryCode: String? = "CO", skipHolidays: Bool = true) {
+    public init(
+        weekdays: Set<Int> = Self.monToFri, countryCode: String? = nil, skipHolidays: Bool = true,
+        isConfigured: Bool = true
+    ) {
         self.weekdays = weekdays
         self.countryCode = countryCode
         self.skipHolidays = skipHolidays
+        self.isConfigured = isConfigured
+    }
+
+    /// Settings for a fresh install: the system region is only a suggestion until the user confirms it.
+    public static func firstRun(regionCode: String?) -> Self {
+        Self(countryCode: regionCode, isConfigured: false)
+    }
+
+    /// Settings saved before first-run setup existed were chosen by the user, so they count as configured.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        weekdays = try container.decode(Set<Int>.self, forKey: .weekdays)
+        countryCode = try container.decodeIfPresent(String.self, forKey: .countryCode)
+        skipHolidays = try container.decode(Bool.self, forKey: .skipHolidays)
+        isConfigured = try container.decodeIfPresent(Bool.self, forKey: .isConfigured) ?? true
     }
 
     public static let monToFri: Set<Int> = [2, 3, 4, 5, 6]
