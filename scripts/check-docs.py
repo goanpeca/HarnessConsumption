@@ -37,7 +37,7 @@ REQUIRED = [
     "docs/references/harness-engineering.md",
     ".claude/settings.json",
     ".claude/hooks/architecture-check.sh",
-    ".claude/hooks/protected-paths.sh",
+    ".claude/hooks/protected-paths.py",
     ".claude/skills/credential-handling/SKILL.md",
 ]
 FENCE_RE = re.compile(r"^(```|~~~).*?^\1", re.M | re.S)

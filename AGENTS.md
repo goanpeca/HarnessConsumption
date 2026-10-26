@@ -32,7 +32,7 @@ Makefile                     Task runner; the source of truth for what each gate
 | `make bootstrap` | Install the dev tools (SwiftLint, zizmor, gitleaks, actionlint, shellcheck) and git hooks |
 | `make test` | Package tests |
 | `make coverage` | Tests with coverage; fails below the floor in `scripts/check-coverage.py` |
-| `make check` | Harness checks: architecture, docs, file size |
+| `make check` | Harness checks: architecture, docs, hook gate, file size, mutation patterns |
 | `make mutation` | Mutation testing of `ConsumptionKit` (slow; see [mutation-testing.md](docs/references/mutation-testing.md)) |
 | `make lint` | swift-format (strict) + SwiftLint (strict) |
 | `make security` | zizmor, actionlint, shellcheck, gitleaks |
@@ -55,7 +55,8 @@ Posture: **middle** (decided 2026-10-20 by goanpeca, who owns change management 
 - Routine changes under an accepted spec with a green `make ci` can be merged by the agent.
 - A human code owner approves anything touching the **protected paths**: `Keychain.swift`,
   `DesktopAuth.swift`, `ClaudeClient.swift`, `CodexClient.swift`, `.github/`, `SECURITY.md`,
-  `docs/SECURITY.md`, `.claude/`, `scripts/check-*`. The `protected-paths` hook asks before editing them.
+  `docs/SECURITY.md`, `.claude/`, `scripts/check-*`. The `protected-paths` hook asks before the editing
+  tools touch them; a shell command that rewrites one skips it, so CODEOWNERS and CI are the backstop.
 - Never force-push, and never mark an `intent.md`, `spec.md` or `plan.md` approved on a human's behalf.
 - Enforcing this on the PR (not only locally) is [TD-10](docs/tech-debt-tracker.md).
 

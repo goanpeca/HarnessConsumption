@@ -25,6 +25,7 @@ mutation:        ## Mutation testing of ConsumptionKit (slow; CI runs it weekly)
 check:           ## Harness checks: architecture, docs, file size
 	python3 scripts/check-architecture.py
 	python3 scripts/check-docs.py
+	python3 scripts/check-hooks.py
 	bash scripts/check-file-size.sh
 	python3 scripts/mutation.py --check
 
