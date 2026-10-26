@@ -16,6 +16,8 @@ change an area; `make coverage` enforces the floors below.
 
 ## Floors
 
+- Mutation testing: every mutant in `scripts/mutation.py` is killed (`make mutation`; the mutation
+  workflow runs on logic changes and weekly). The list grows with the logic.
 - `ConsumptionKit` line coverage: 90% total, 75% per file (`scripts/check-coverage.py`).
 - Swift files: 300 lines (`scripts/check-file-size.sh`); SwiftLint `--strict`; swift-format `--strict`.
 - Builds with `-warnings-as-errors`.

@@ -218,3 +218,20 @@ struct SpendParsingTests {
                 == ClaudeUsageParser.parseISODate("2027-01-01T00:00:00Z"))
     }
 }
+
+struct BudgetSeparateTests {
+    @Test func eachSeparateBudgetUsesItsOwnAmount() {
+        let settings = BudgetSettings(totalUSD: 9, claudeUSD: 1000, codexLimitUSD: 4000, isShared: false)
+        let window = UsageWindow(kind: .monthly, usedPercent: 0, resetsAt: nil)
+        let claude = ProviderUsage(
+            provider: .claude, plan: nil, windows: [window], fetchedAt: .now,
+            spend: SpendReading(used: 100, limit: 4200, unit: .usd))
+        let codex = ProviderUsage(
+            provider: .codex, plan: nil, windows: [window], fetchedAt: .now,
+            spend: SpendReading(used: 100, limit: 1000, unit: .credits))
+        let pools = BudgetStatus.pools(usages: [claude, codex], settings: settings)
+        #expect(pools.map(\.totalUSD) == [1000, 4000])
+        #expect(pools[0].window.usedPercent == 10)
+        #expect(pools[1].window.usedPercent == 10)
+    }
+}

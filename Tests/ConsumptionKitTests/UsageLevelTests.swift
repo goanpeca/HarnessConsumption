@@ -83,3 +83,19 @@ struct UsageLevelBoundaryTests {
         #expect(Set(words).count == 3)
     }
 }
+
+struct UsageLevelOverPaceEdgeTests {
+    let calendar = Fixtures.calendar
+    let monday = Fixtures.bogota(10, 7, 9, 30)
+
+    private func level(used: Double) -> UsageLevel {
+        let window = Fixtures.weekly(used: used)
+        return window.level(pace: WindowPace.compute(window: window, calendar: calendar, now: monday))
+    }
+
+    @Test func exactlyTenPointsOverIsWatchAndJustPastIsCritical() {
+        // The even pace on this first day is 25%.
+        #expect(level(used: 35) == .watch)
+        #expect(level(used: 35.5) == .critical)
+    }
+}

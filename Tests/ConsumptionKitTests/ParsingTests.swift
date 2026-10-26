@@ -95,3 +95,11 @@ struct ParsingTests {
         }
     }
 }
+
+struct DecimalPlacesTests {
+    @Test func claudeAmountsDefaultToCents() throws {
+        let json = #"{"extra_usage":{"utilization":50,"used_credits":2500,"monthly_limit":5000,"currency":"USD"}}"#
+        let usage = try ClaudeUsageParser.parse(Data(json.utf8), plan: nil, now: .now)
+        #expect(usage.spend == SpendReading(used: 25, limit: 50, unit: .usd))
+    }
+}

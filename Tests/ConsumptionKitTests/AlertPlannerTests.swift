@@ -73,3 +73,43 @@ struct AlertPlannerTests {
             ).isEmpty)
     }
 }
+
+struct AlertThresholdTests {
+    let calendar = Fixtures.calendar
+    let planner = AlertPlanner()
+    let now = Fixtures.bogota(10, 7, 11)
+
+    private func usage(_ window: UsageWindow) -> ProviderUsage {
+        ProviderUsage(provider: .codex, plan: nil, windows: [window], fetchedAt: .now)
+    }
+
+    private func kinds(used: Double) -> Set<UsageAlert.Kind> {
+        var state = AlertState()
+        state.lastSummaryDay = Day(year: 2026, month: 10, day: 7)
+        let alerts = planner.plan(
+            usages: [usage(Fixtures.weekly(used: used))], calendar: calendar, now: now, state: &state)
+        return Set(alerts.map(\.kind))
+    }
+
+    @Test func nearlyOutStartsBelowTenPercentLeft() {
+        #expect(AlertPlanner().nearlyOutThreshold == 10)
+        #expect(!kinds(used: 85).contains(.nearlyOut))
+        #expect(!kinds(used: 90).contains(.nearlyOut))
+        #expect(kinds(used: 90.1).contains(.nearlyOut))
+    }
+
+    @Test func smallResetTimeJitterIsNotAReset() {
+        func alerts(shift: TimeInterval) -> [UsageAlert] {
+            var state = AlertState()
+            state.lastSummaryDay = Day(year: 2026, month: 10, day: 14)
+            let first = UsageWindow(kind: .weekly, usedPercent: 60, resetsAt: Fixtures.bogota(10, 14, 8, 52))
+            _ = planner.plan(usages: [usage(first)], calendar: calendar, now: Fixtures.bogota(10, 14, 8), state: &state)
+            let second = UsageWindow(
+                kind: .weekly, usedPercent: 60, resetsAt: Fixtures.bogota(10, 14, 8, 52).addingTimeInterval(shift))
+            return planner.plan(
+                usages: [usage(second)], calendar: calendar, now: Fixtures.bogota(10, 14, 9), state: &state)
+        }
+        #expect(!alerts(shift: 200).contains { $0.kind == .reset })
+        #expect(alerts(shift: 400).contains { $0.kind == .reset })
+    }
+}

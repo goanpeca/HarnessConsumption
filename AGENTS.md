@@ -31,6 +31,7 @@ Makefile                     Task runner; the source of truth for what each gate
 | `make test` | Package tests |
 | `make coverage` | Tests with coverage; fails below the floor in `scripts/check-coverage.py` |
 | `make check` | Harness checks: architecture, docs, file size |
+| `make mutation` | Mutation testing of `ConsumptionKit` (slow; see [mutation-testing.md](docs/references/mutation-testing.md)) |
 | `make lint` | swift-format (strict) + SwiftLint (strict) |
 | `make security` | zizmor, actionlint, shellcheck, gitleaks |
 | `make app` / `make run` | Build `build/Agent Consumption.app` / build and launch it |
@@ -71,6 +72,7 @@ Logs: `make logs` (subsystem `com.goanpeca.agentconsumption`).
 | How exec plans work | [PLANS.md](docs/PLANS.md) |
 | Known deferred work | [tech-debt-tracker.md](docs/exec-plans/tech-debt-tracker.md) |
 | Endpoint shapes and quirks | [usage-endpoints.md](docs/references/usage-endpoints.md) |
+| Mutation testing, why not Muter | [mutation-testing.md](docs/references/mutation-testing.md) |
 | Why this harness exists | [harness-engineering.md](docs/references/harness-engineering.md) |
 
 ## Workflow

@@ -65,3 +65,45 @@ struct PacingTests {
         #expect(abs(pace.todayShare - 60 / Double(pace.workDaysLeft)) < 0.001)
     }
 }
+
+struct PacingBoundaryTests {
+    let calendar = Fixtures.calendar
+    let monday = Fixtures.bogota(10, 7, 9, 30)
+
+    @Test func overPaceHasAHalfPointTolerance() throws {
+        let target = try #require(
+            WindowPace.compute(window: Fixtures.weekly(used: 0), calendar: calendar, now: monday)
+        ).targetUsedByEndOfToday
+        #expect(target == 25)
+        #expect(
+            try #require(WindowPace.compute(window: Fixtures.weekly(used: 25.4), calendar: calendar, now: monday))
+                .isOverPace == false)
+        #expect(
+            try #require(WindowPace.compute(window: Fixtures.weekly(used: 25.6), calendar: calendar, now: monday))
+                .isOverPace)
+    }
+
+    @Test func aWindowWithNoWorkDaysTargetsEverything() throws {
+        let weekend = UsageWindow(
+            kind: .session, usedPercent: 5, resetsAt: Fixtures.bogota(10, 11, 12), length: 86_400)
+        let pace = try #require(
+            WindowPace.compute(window: weekend, calendar: calendar, now: Fixtures.bogota(10, 10, 15)))
+        #expect(pace.totalWorkDays == 0)
+        #expect(pace.targetUsedByEndOfToday == 100)
+        #expect(!pace.isOverPace)
+    }
+
+    @Test func todayOnlyCountsWhenItIsAWorkDayWithDaysLeft() throws {
+        let saturday = Fixtures.bogota(10, 10, 12)
+        let weekend = try #require(
+            WindowPace.compute(window: Fixtures.weekly(used: 0), calendar: calendar, now: saturday))
+        // Oct 7, 8, 9 elapsed; only Oct 13 left (12 is a holiday); Saturday adds nothing.
+        #expect(weekend.targetUsedByEndOfToday == 75)
+
+        let afterReset = Fixtures.bogota(10, 14, 10)
+        let late = try #require(
+            WindowPace.compute(window: Fixtures.weekly(used: 0), calendar: calendar, now: afterReset))
+        #expect(late.workDaysLeft == 0)
+        #expect(late.targetUsedByEndOfToday == 100)
+    }
+}

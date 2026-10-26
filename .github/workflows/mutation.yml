@@ -1,0 +1,40 @@
+name: Mutation testing
+
+# Mutates ConsumptionKit one small change at a time and requires the tests to catch every change.
+# Slow, so it runs on changes to the logic or its tests, weekly, and on demand. See
+# docs/references/mutation-testing.md.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Sources/ConsumptionKit/**"
+      - "Tests/**"
+      - "scripts/mutation.py"
+      - ".github/workflows/mutation.yml"
+  schedule:
+    - cron: "17 8 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: mutation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mutate:
+    name: Every mutant is killed
+    runs-on: macos-26
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Toolchain
+        run: swift --version
+
+      - name: Mutation testing
+        run: make mutation

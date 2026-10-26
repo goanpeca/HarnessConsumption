@@ -1,7 +1,7 @@
 APP := build/Agent Consumption.app
 SWIFT_SOURCES := Sources Tests Package.swift
 
-.PHONY: help bootstrap hooks test coverage check lint format security build app run install logs ci clean
+.PHONY: help bootstrap hooks test coverage mutation check lint format security build app run install logs ci clean
 
 help:            ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
@@ -19,10 +19,14 @@ test:            ## Package tests (Swift Testing)
 coverage:        ## Tests plus the coverage floors
 	python3 scripts/check-coverage.py
 
+mutation:        ## Mutation testing of ConsumptionKit (slow; CI runs it weekly)
+	python3 scripts/mutation.py
+
 check:           ## Harness checks: architecture, docs, file size
 	python3 scripts/check-architecture.py
 	python3 scripts/check-docs.py
 	bash scripts/check-file-size.sh
+	python3 scripts/mutation.py --check
 
 lint:            ## swift-format (strict) and SwiftLint (strict)
 	swift format lint --strict --recursive $(SWIFT_SOURCES) --configuration .swift-format
