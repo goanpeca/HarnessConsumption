@@ -1,1 +1,12 @@
 * @goanpeca
+
+# Protected paths: a human code owner approves changes here (see "Merge gate" in AGENTS.md).
+/Sources/AgentConsumption/Keychain.swift @goanpeca
+/Sources/AgentConsumption/DesktopAuth.swift @goanpeca
+/Sources/AgentConsumption/ClaudeClient.swift @goanpeca
+/Sources/AgentConsumption/CodexClient.swift @goanpeca
+/.github/ @goanpeca
+/.claude/ @goanpeca
+/scripts/check-* @goanpeca
+/SECURITY.md @goanpeca
+/docs/SECURITY.md @goanpeca

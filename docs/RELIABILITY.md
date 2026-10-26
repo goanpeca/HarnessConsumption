@@ -15,3 +15,11 @@ The risk is not a missed number; it is breaking the user's Claude Desktop or Cod
 Checks run on a timer ([RefreshInterval](../Sources/ConsumptionKit/RefreshInterval.swift), min 5
 minutes) to stay gentle on undocumented endpoints. Every fetch outcome is logged without secrets
 (`make logs`).
+
+## Control bands
+
+The weekly [drift scan](../.github/workflows/drift.yml) is this repo's control band: docs, layering and file
+sizes must match the code, and a breach opens one issue. A breach, a failed release or a wrong reading
+in the field becomes a new `intent/<slug>/intent.md` (see [PLANS.md](PLANS.md)), written by the agent
+that found it and reviewed by the owner.
+

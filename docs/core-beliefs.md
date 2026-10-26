@@ -5,7 +5,7 @@ Agent-first operating principles for this repo. Short on purpose.
 1. **Humans steer, agents execute.** When an agent struggles, add the missing doc, check or tool;
    never "try harder".
 2. **The repo is the system of record.** If an agent can't read it in-repo, it doesn't exist.
-   [AGENTS.md](../../AGENTS.md) is a map; detail lives in `docs/`.
+   [AGENTS.md](../AGENTS.md) is a map; detail lives in `docs/`.
 3. **Enforce invariants, not implementations.** Layers, boundaries and taste rules are scripts whose
    error messages say how to fix the violation.
 4. **When docs fall short, promote the rule into code.**
