@@ -17,6 +17,9 @@ Both are **undocumented**: they back Claude Code's `/usage` and Codex's `/status
 as null plus `extra_usage.{is_enabled, utilization, monthly_limit, used_credits}`, a monthly spend
 limit with no reset date (treated as the 1st, UTC).
 
+The spend in dollars: `extra_usage.{used_credits, monthly_limit}` are minor units
+(`decimal_places`, `currency: "USD"`).
+
 Credentials: Claude Desktop's `~/Library/Application Support/Claude/config.json`, key
 `oauth:tokenCacheV2`: base64 of `v10` + AES-128-CBC (PBKDF2-SHA1, salt `saltysalt`, 1003 rounds, IV
 16 spaces; password is the `Claude Safe Storage` Keychain item). It decrypts to a map of entries
@@ -38,7 +41,8 @@ A window longer than a day is "weekly", otherwise "5-hour".
 
 Some plans (seen on enterprise) return `"rate_limit": null` and report a monthly spend limit instead:
 `spend_control.individual_limit.{used_percent, reset_at, reset_after_seconds}`. It shows as a
-"Monthly" window with no pacing.
+"Monthly" window. `individual_limit.{used, limit}` are strings in **credits** (`unit: "credit"`), not
+dollars, so the shared budget converts them with a user setting.
 
 ## Holidays
 

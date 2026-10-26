@@ -45,6 +45,10 @@ struct MenuView: View {
 
     private var usage: some View {
         VStack(alignment: .leading, spacing: 14) {
+            if store.budgetStatus != nil {
+                BudgetSection(store: store)
+                Divider()
+            }
             ForEach(Provider.allCases) { provider in
                 ProviderSection(store: store, provider: provider)
                 Divider()
@@ -92,6 +96,7 @@ private struct ProviderSection: View {
                 }
                 Spacer()
             }
+            ProviderSpendLine(store: store, provider: provider)
             if let error = state?.error {
                 Label(error, systemImage: "exclamationmark.triangle.fill")
                     .font(.caption).foregroundStyle(.orange)
@@ -122,34 +127,52 @@ private struct WindowRow: View {
                     .monospacedDigit()
                 Text("left").font(.subheadline).foregroundStyle(.secondary)
             }
-            UsageBar(fraction: window.usedPercent / 100, tint: tint)
+            UsageBar(
+                fraction: window.usedPercent / 100, tint: level.color,
+                marker: pace.map { $0.targetUsedByEndOfToday / 100 })
             HStack {
-                if let reset = window.resetsAt {
-                    Text("Resets \(reset.formatted(.relative(presentation: .named)))")
-                } else {
-                    Text("No active window")
+                Label {
+                    Text(window.status(pace: pace)).foregroundStyle(.primary)
+                } icon: {
+                    Image(systemName: level.symbol).foregroundStyle(level.color)
                 }
+                .labelStyle(.titleAndIcon)
+                Text("· " + resetText)
                 Spacer()
                 if window.kind != .session, let pace {
                     Text("Today \(percent(pace.todayShare)) · \(days(pace.workDaysLeft)) left")
-                        .foregroundStyle(pace.isOverPace ? Color.orange : Color.secondary)
                 }
             }
             .font(.caption).foregroundStyle(.secondary)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(window.kind.displayName) limit")
+        .accessibilityValue(spokenSummary)
     }
 
-    private var tint: Color {
-        if window.remainingPercent < 10 { return .red }
-        if window.kind != .session, pace?.isOverPace == true { return .orange }
-        return .accentColor
+    private var resetText: String {
+        window.resetsAt.map { "Resets \($0.formatted(.relative(presentation: .named)))" } ?? "No active window"
     }
+
+    private var spokenSummary: String {
+        var parts = [
+            "\(Int(window.remainingPercent.rounded())) percent left", window.status(pace: pace), resetText,
+        ]
+        if window.kind != .session, let pace {
+            parts.append("Today \(percent(pace.todayShare)) of the limit, \(days(pace.workDaysLeft)) left")
+        }
+        return parts.joined(separator: ". ")
+    }
+
+    private var level: UsageLevel { window.level(pace: pace) }
 }
 
 /// A slim capsule bar showing how much of a window is used; matches system progress styling.
-private struct UsageBar: View {
+struct UsageBar: View {
     let fraction: Double
     let tint: Color
+    /// Where an even pace would have the bar by the end of today.
+    var marker: Double?
 
     var body: some View {
         Capsule()
@@ -159,11 +182,15 @@ private struct UsageBar: View {
                 GeometryReader { proxy in
                     Capsule().fill(tint)
                         .frame(width: max(6, proxy.size.width * min(max(fraction, 0), 1)))
+                    if let marker {
+                        Capsule().fill(.primary)
+                            .frame(width: 2, height: 12)
+                            .offset(x: proxy.size.width * min(max(marker, 0), 1) - 1, y: -3)
+                    }
                 }
             }
-            .accessibilityElement()
-            .accessibilityLabel("Used")
-            .accessibilityValue("\(Int((fraction * 100).rounded())) percent")
+            .accessibilityHidden(true)
+            .padding(.vertical, marker == nil ? 0 : 3)
     }
 }
 
@@ -204,11 +231,11 @@ private struct MonthSection: View {
     }
 }
 
-private func percent(_ value: Double) -> String {
+func percent(_ value: Double) -> String {
     value < 10 ? String(format: "%.1f%%", value) : String(format: "%.0f%%", value)
 }
 
-private func days(_ count: Int) -> String { count == 1 ? "1 day" : "\(count) days" }
+func days(_ count: Int) -> String { count == 1 ? "1 day" : "\(count) days" }
 
 /// 325% of one weekly window reads as "3.3 weeks".
 private func weeks(_ percent: Double) -> String {

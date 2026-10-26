@@ -47,6 +47,16 @@ struct SettingsView: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
+                Text("Shared budget").font(.headline)
+                MoneyField(title: "Per month (USD)", value: budgetTotal)
+                MoneyField(title: "Codex limit is worth (USD)", value: codexLimit)
+                Text(
+                    "One pool for Claude and Codex together; 0 turns it off. Codex reports credits, so this is what its limit is worth in dollars."
+                )
+                .font(.caption).foregroundStyle(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
                 Text("Check usage").font(.headline)
                 Picker("Check usage", selection: interval) {
                     ForEach(RefreshInterval.allCases) { Text("Every \($0.label)").tag($0) }
@@ -109,6 +119,26 @@ struct SettingsView: View {
             })
     }
 
+    private var budgetTotal: Binding<Double> {
+        Binding(
+            get: { store.budget.totalUSD },
+            set: { value in
+                var new = store.budget
+                new.totalUSD = value
+                store.updateBudget(new)
+            })
+    }
+
+    private var codexLimit: Binding<Double> {
+        Binding(
+            get: { store.budget.codexLimitUSD },
+            set: { value in
+                var new = store.budget
+                new.codexLimitUSD = value
+                store.updateBudget(new)
+            })
+    }
+
     private var interval: Binding<RefreshInterval> {
         Binding(get: { store.refreshInterval }, set: { store.setRefreshInterval($0) })
     }
@@ -153,5 +183,23 @@ private struct DayToggle: View {
         }
         .buttonStyle(.plain)
         .disabled(isOn && isLast)
+    }
+}
+
+/// A labeled dollar amount that commits on Return or when focus leaves.
+private struct MoneyField: View {
+    let title: String
+    @Binding var value: Double
+
+    var body: some View {
+        HStack {
+            Text(title).font(.subheadline)
+            Spacer()
+            TextField(title, value: $value, format: .number.precision(.fractionLength(0...2)))
+                .labelsHidden()
+                .multilineTextAlignment(.trailing)
+                .frame(width: 90)
+                .textFieldStyle(.roundedBorder)
+        }
     }
 }

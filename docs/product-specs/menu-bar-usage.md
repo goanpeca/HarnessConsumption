@@ -11,6 +11,14 @@ the quota lasts through the remaining work days.
 
 ## Usage tab
 
+Shared budget: when both providers draw from one dollar pool (Settings > Shared budget, default
+$4,000 per month), the menu bar shows a single `◔ 62%` (percent of that pool left, `?` when a
+provider's spend is missing or stale) and the panel opens with a Shared budget card: percent left,
+a bar with the even-pace tick, dollars left, dollars per work day. Each provider also shows what it
+spent and its share of the pool. Claude reports dollars; Codex reports credits, converted as
+`used / limit x "Codex limit is worth (USD)"`. Budget 0 turns it off and the menu bar goes back to
+one percentage per provider.
+
 Per provider: plan, then each window (5-hour, weekly) with a bar, percent left, reset time.
 Weekly rows add "Today: X% · N days left" (orange when over pace). A month section shows days left,
 quota left this month in weeks, per-day share, and the active day rules. Errors appear inline in

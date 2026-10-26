@@ -61,17 +61,38 @@ public struct UsageWindow: Codable, Sendable, Equatable {
     public var remainingPercent: Double { 100 - usedPercent }
 }
 
+/// Money spent against a provider's own monthly limit, in the unit the provider reports.
+public struct SpendReading: Codable, Sendable, Equatable {
+    public enum Unit: String, Codable, Sendable {
+        case usd, credits
+    }
+
+    public var used: Double
+    public var limit: Double
+    public var unit: Unit
+
+    public init(used: Double, limit: Double, unit: Unit) {
+        self.used = used
+        self.limit = limit
+        self.unit = unit
+    }
+}
+
 public struct ProviderUsage: Codable, Sendable, Equatable {
     public var provider: Provider
     public var plan: String?
     public var windows: [UsageWindow]
     public var fetchedAt: Date
+    public var spend: SpendReading?
 
-    public init(provider: Provider, plan: String?, windows: [UsageWindow], fetchedAt: Date) {
+    public init(
+        provider: Provider, plan: String?, windows: [UsageWindow], fetchedAt: Date, spend: SpendReading? = nil
+    ) {
         self.provider = provider
         self.plan = plan
         self.windows = windows
         self.fetchedAt = fetchedAt
+        self.spend = spend
     }
 
     public var weekly: UsageWindow? { windows.first { $0.kind == .weekly } }

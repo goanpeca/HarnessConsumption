@@ -37,8 +37,8 @@ struct ParsingTests {
     @Test func parsesCodexSpendLimitWhenNoRateLimit() throws {
         let json = #"""
             {"plan_type":"enterprise","rate_limit":null,"credits":{"has_credits":true,"balance":null},
-             "spend_control":{"reached":false,"individual_limit":{"source":"org","unit":"credits",
-              "used_percent":1,"remaining_percent":99,"reset_after_seconds":1834820,"reset_at":1793491200}}}
+             "spend_control":{"reached":false,"individual_limit":{"source":"org","unit":"credit",
+              "limit":"42858","used":"1903.5","used_percent":1,"remaining_percent":99,"reset_after_seconds":1834820,"reset_at":1793491200}}}
             """#
         let usage = try CodexUsageParser.parse(Data(json.utf8), now: now)
         #expect(usage.weekly == nil)
@@ -48,6 +48,7 @@ struct ParsingTests {
                     kind: .monthly, usedPercent: 1, resetsAt: Date(timeIntervalSince1970: 1_793_491_200),
                     length: 31 * 86_400))
         #expect(usage.plan == "enterprise")
+        #expect(usage.spend == SpendReading(used: 1903.5, limit: 42_858, unit: .credits))
     }
 
     @Test func parsesClaudeUsage() throws {
@@ -68,7 +69,7 @@ struct ParsingTests {
         let json = #"""
             {"five_hour":null,"seven_day":null,
              "extra_usage":{"is_enabled":true,"monthly_limit":420000,"used_credits":60400.0,
-                            "utilization":14.38,"currency":"USD"}}
+                            "utilization":14.38,"currency":"USD","decimal_places":2}}
             """#
         let usage = try ClaudeUsageParser.parse(Data(json.utf8), plan: "enterprise", now: now)
         #expect(usage.session == nil)
@@ -76,6 +77,7 @@ struct ParsingTests {
         #expect(usage.monthly?.usedPercent == 14.38)
         #expect(usage.monthly?.resetsAt == Date(timeIntervalSince1970: 1_793_491_200))
         #expect(usage.monthly?.length == 2_678_400.0)
+        #expect(usage.spend == SpendReading(used: 604, limit: 4200, unit: .usd))
     }
 
     @Test func claudeIdleSessionHasNoReset() throws {

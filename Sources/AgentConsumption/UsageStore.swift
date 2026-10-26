@@ -18,6 +18,7 @@ final class UsageStore {
     private(set) var refreshInterval = RefreshInterval(
         minutes: UserDefaults.standard.object(forKey: "refreshMinutes") as? Int)
     private(set) var settings = WorkSettings.load()
+    private(set) var budget = BudgetSettings.load()
     private(set) var countries: [Country] = []
     private(set) var calendar = WorkSettings().calendar(holidays: [])
     private(set) var holidaysMissing = false
@@ -122,6 +123,17 @@ final class UsageStore {
         Task { await reloadCalendar() }
     }
 
+    func updateBudget(_ new: BudgetSettings) {
+        guard new != budget, new.totalUSD >= 0, new.codexLimitUSD >= 0 else { return }
+        budget = new
+        new.save()
+    }
+
+    /// The shared budget across providers, or nil when it is off or no provider reports spend.
+    var budgetStatus: BudgetStatus? {
+        BudgetStatus.compute(usages: Provider.allCases.compactMap { states[$0]?.usage }, settings: budget)
+    }
+
     private func apply(_ provider: Provider, _ result: Result<ProviderUsage, Error>) {
         switch result {
         case let .success(usage):
@@ -167,6 +179,16 @@ final class UsageStore {
                 lines.append(String(format: "  month: %.0f%% of a week left, %.1f%%/day", projected, daily))
             }
         }
+        if let status = budgetStatus {
+            var line = String(
+                format: "budget: $%.0f of $%.0f spent, %.0f%% left", status.spentUSD, status.totalUSD,
+                status.window.remainingPercent)
+            if let pace = status.pace(calendar: calendar, now: .now) {
+                line += String(
+                    format: ", $%.0f/day over %d work days", status.dollarsPerDay(pace: pace), pace.workDaysLeft)
+            }
+            lines.append(line)
+        }
         let month = monthOutlook(.claude)
         lines.append(
             "counted days: \(month.workDaysLeft) of \(month.workDaysInMonth) left this month "
@@ -175,8 +197,14 @@ final class UsageStore {
         return lines.joined(separator: "\n")
     }
 
-    /// e.g. `✳︎ 62% ◎ 80%`: weekly (or monthly spend) quota left per provider.
+    /// The share of the shared budget left (`◔ 62%`), or without a budget `✳︎ 62%  ◎ 80%`: weekly (or
+    /// monthly spend) quota left per provider. Plain text on purpose: the menu bar draws it in the
+    /// system's own color.
     var menuBarTitle: String {
+        if let status = budgetStatus {
+            let partial = !status.missing.isEmpty || Provider.allCases.contains { states[$0]?.error != nil }
+            return "◔ \(Int(status.window.remainingPercent.rounded()))%\(partial ? "?" : "")"
+        }
         let parts = Provider.allCases.map { provider -> String in
             let symbol = provider == .claude ? "✳︎" : "◎"
             guard let window = states[provider]?.usage?.headline else { return "\(symbol) –" }
