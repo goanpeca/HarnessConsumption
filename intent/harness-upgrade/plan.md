@@ -1,7 +1,16 @@
-# Harness upgrade
+# Plan: Harness upgrade
 
-Goal: bring the repo in line with [harness-engineering.md](../../references/harness-engineering.md)
-and harden tooling and CI. Architecture: [ARCHITECTURE.md](../../../ARCHITECTURE.md).
+From: no intent.md or spec.md (written before this repo used the playbook layout, so the goal and constraints
+below stand in for them and the steps cite none). Status: completed 2026-10-10.
+
+Goal: bring the repo in line with [harness-engineering.md](../../docs/references/harness-engineering.md)
+and harden tooling and CI. Architecture: [ARCHITECTURE.md](../../ARCHITECTURE.md).
+
+## Files that change
+
+`AGENTS.md`, `CLAUDE.md`, `ARCHITECTURE.md`, `docs/` (new), `scripts/check-*`, `.swiftlint.yml`,
+`.github/` (workflows, dependabot, CODEOWNERS, PR template), `.githooks/`, `SECURITY.md`,
+`scripts/bundle.sh` (all new unless an existing path).
 
 ## Constraints
 
@@ -9,7 +18,7 @@ and harden tooling and CI. Architecture: [ARCHITECTURE.md](../../../ARCHITECTURE
 - Every check's failure message says how to fix it.
 - No new runtime dependencies.
 
-## Tasks
+## Order of work
 
 - [x] `AGENTS.md` as a ~100-line map; `CLAUDE.md` imports it
 - [x] `docs/` system of record: design docs index, core beliefs, specs, quality, reliability, security, plans, references
@@ -22,6 +31,18 @@ and harden tooling and CI. Architecture: [ARCHITECTURE.md](../../../ARCHITECTURE
 - [x] Git hooks: pre-commit fast checks, pre-push full gate
 - [x] Weekly drift scan that opens an issue
 - [x] Fix native look: re-stamp SDK version in the bundle
+
+## Risks
+
+- A check whose failure message doesn't say how to fix it just trains people to bypass it.
+- Strict lint on existing code can force risky refactors; each finding was fixed in a small step.
+- Workflows are the attack surface for secrets: least privilege and SHA pinning are not optional.
+
+## Proof
+
+- `make ci` runs every check CI runs and was green before hand-off.
+- The architecture and docs checks were negative-tested: each fails on a deliberate violation with a message that names the fix.
+- Coverage floors are enforced by `scripts/check-coverage.py`.
 
 ## Decision log
 

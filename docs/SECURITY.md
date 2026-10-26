@@ -27,4 +27,4 @@ No third-party Swift dependencies. Dev tools are installed by `make bootstrap`.
 - `zizmor` (workflow audit), `actionlint`, `shellcheck` and `gitleaks` (secrets, full history) run
   on every push and PR, locally with `make security`, and in the pre-push hook.
 - Not enabled: CodeQL and dependency review need GitHub Advanced Security on private repos;
-  tracked in the [tech-debt tracker](exec-plans/tech-debt-tracker.md).
+  tracked in the [tech-debt tracker](tech-debt-tracker.md).

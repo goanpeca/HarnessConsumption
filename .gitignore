@@ -4,3 +4,4 @@ build/
 *.xcodeproj
 .DS_Store
 *.profraw
+.claude/settings.local.json

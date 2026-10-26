@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Doc-drift gate for the knowledge base (see docs/design-docs/core-beliefs.md).
+"""Doc-drift gate for the knowledge base (see docs/core-beliefs.md).
 
 Checks: AGENTS.md stays a short map; required docs exist; relative links
-resolve; the design-doc index lists every design doc with a valid status;
-active exec plans keep a decision log. Stdlib only. Exit 1 on any violation.
+resolve; every intent/<slug>/ folder is indexed and its intent, spec and plan
+follow the playbook shape (numbered requirements, proof, decision log).
+Stdlib only. Exit 1 on any violation.
 """
 
 from __future__ import annotations
@@ -14,19 +15,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 MAX_AGENTS_LINES = 110
-STATUSES = {"current", "stale", "superseded"}
 REQUIRED = [
     "AGENTS.md",
     "CLAUDE.md",
     "ARCHITECTURE.md",
+    "REVIEW.md",
     "SECURITY.md",
-    "docs/design-docs/index.md",
-    "docs/design-docs/core-beliefs.md",
-    "docs/exec-plans/tech-debt-tracker.md",
-    "docs/exec-plans/completed/.gitkeep",
-    "docs/exec-plans/active/.gitkeep",
-    "docs/product-specs/index.md",
-    "docs/product-specs/menu-bar-usage.md",
+    "intent/README.md",
+    "intent/menu-bar-usage/intent.md",
+    "intent/menu-bar-usage/spec.md",
+    "docs/core-beliefs.md",
+    "docs/tech-debt-tracker.md",
     "docs/DESIGN.md",
     "docs/FRONTEND.md",
     "docs/PLANS.md",
@@ -36,6 +35,10 @@ REQUIRED = [
     "docs/SECURITY.md",
     "docs/references/usage-endpoints.md",
     "docs/references/harness-engineering.md",
+    ".claude/settings.json",
+    ".claude/hooks/architecture-check.sh",
+    ".claude/hooks/protected-paths.sh",
+    ".claude/skills/credential-handling/SKILL.md",
 ]
 FENCE_RE = re.compile(r"^(```|~~~).*?^\1", re.M | re.S)
 INLINE_CODE_RE = re.compile(r"`[^`\n]*`")
@@ -48,8 +51,9 @@ def rel(path: Path) -> str:
 
 
 def doc_files() -> list[Path]:
-    files = [ROOT / "AGENTS.md", ROOT / "ARCHITECTURE.md", ROOT / "README.md", ROOT / "SECURITY.md"]
-    files += sorted((ROOT / "docs").rglob("*.md")) if (ROOT / "docs").is_dir() else []
+    files = [ROOT / n for n in ("AGENTS.md", "ARCHITECTURE.md", "README.md", "REVIEW.md", "SECURITY.md")]
+    for folder in ("docs", "intent"):
+        files += sorted((ROOT / folder).rglob("*.md")) if (ROOT / folder).is_dir() else []
     return [f for f in files if f.is_file()]
 
 
@@ -100,55 +104,41 @@ def check_links(errors: list[str]) -> None:
                 )
 
 
-def check_design_index(errors: list[str]) -> None:
-    folder = ROOT / "docs" / "design-docs"
-    index = folder / "index.md"
+def check_intents(errors: list[str]) -> None:
+    folder = ROOT / "intent"
+    index = folder / "README.md"
     if not index.is_file():
         return
-    text = index.read_text(encoding="utf-8")
-    rows = [line for line in text.splitlines() if line.lstrip().startswith("|")]
-    header = [cell.strip().lower() for cell in rows[0].strip().strip("|").split("|")] if rows else []
-    if "status" not in header:
-        errors.append(
-            "docs/design-docs/index.md needs a table with a Status column "
-            f"({'/'.join(sorted(STATUSES))}). See docs/PLANS.md."
-        )
-        return
-    col = header.index("status")
-    for row in rows[2:]:
-        cells = [cell.strip() for cell in row.strip().strip("|").split("|")]
-        status = re.sub(r"[*_`]", "", cells[col]).strip().lower() if col < len(cells) else ""
-        if status not in STATUSES:
+    indexed = {t.split("#", 1)[0].split("/")[0] for t in links(index.read_text(encoding="utf-8"))}
+    for change in sorted(p for p in folder.iterdir() if p.is_dir()):
+        name = change.name
+        if name not in indexed:
             errors.append(
-                f"docs/design-docs/index.md row '{row.strip()}' has status '{status}'. "
-                f"Use one of {sorted(STATUSES)}."
+                f"intent/{name}/ is not listed in intent/README.md. Add a row linking its artifacts "
+                f"with stage and status. See docs/PLANS.md."
             )
-    listed = {Path(t.split("#", 1)[0]).name for t in links(text)}
-    for doc in sorted(folder.glob("*.md")):
-        if doc.name in {"index.md", "core-beliefs.md"}:
-            continue
-        if doc.name not in listed:
+        has = {f.name for f in change.glob("*.md")}
+        if not has & {"intent.md", "plan.md"}:
             errors.append(
-                f"{rel(doc)} is not listed in docs/design-docs/index.md. Add a row linking it "
-                f"with status, verified date and a one-line summary."
+                f"intent/{name}/ has no intent.md. Every change starts with one; write it (or, for work "
+                f"that predates the chain, a plan.md that says so). See docs/PLANS.md."
             )
-
-
-def check_exec_plans(errors: list[str]) -> None:
-    for plan in sorted((ROOT / "docs" / "exec-plans" / "active").glob("*.md")):
-        text = plan.read_text(encoding="utf-8")
-        if not re.search(r"^## Decision log\s*$", text, re.M):
+        spec = change / "spec.md"
+        if spec.is_file() and not re.search(r"^- R1\.", spec.read_text(encoding="utf-8"), re.M):
             errors.append(
-                f"{rel(plan)} has no '## Decision log' section. Add one and append dated "
-                f"entries for every non-obvious choice. See docs/PLANS.md."
+                f"{rel(spec)} has no numbered requirements. List them as '- R1. <testable statement>' "
+                f"so the plan and the review can cite them. See docs/PLANS.md."
             )
-        done = re.findall(r"^\s*- \[x\]", text, re.M | re.I)
-        open_tasks = re.findall(r"^\s*- \[ \]", text, re.M)
-        if done and not open_tasks:
-            errors.append(
-                f"{rel(plan)} has every task ticked but is still active. `git mv` it to "
-                f"docs/exec-plans/completed/ and update links to it. See docs/PLANS.md#lifecycle."
-            )
+        plan = change / "plan.md"
+        if plan.is_file():
+            text = plan.read_text(encoding="utf-8")
+            for heading in ("## Proof", "## Decision log"):
+                if not re.search(rf"^{re.escape(heading)}\s*$", text, re.M):
+                    errors.append(
+                        f"{rel(plan)} has no '{heading}' section. Add it: Proof names the checks that "
+                        f"cover each requirement; the decision log gets a dated line per non-obvious "
+                        f"choice. See docs/PLANS.md."
+                    )
 
 
 def main() -> int:
@@ -156,8 +146,7 @@ def main() -> int:
     check_agents(errors)
     check_required(errors)
     check_links(errors)
-    check_design_index(errors)
-    check_exec_plans(errors)
+    check_intents(errors)
     if errors:
         print("check-docs: FAILED", file=sys.stderr)
         for error in errors:

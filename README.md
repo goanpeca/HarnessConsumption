@@ -97,7 +97,10 @@ and weekly. Why this runner and not Muter: [mutation-testing.md](docs/references
 
 ## Development
 
-Start at [AGENTS.md](AGENTS.md): layout, commands, rules, and where each doc lives. CI is hardened
+Start at [AGENTS.md](AGENTS.md): layout, commands, rules, and where each doc lives. Changes follow
+the [AI-native SDLC](docs/PLANS.md) chain: `intent/<change>/` holds `intent.md`, `spec.md` and `plan.md`,
+each approved by a human before the next, with [REVIEW.md](REVIEW.md) as the review checklist and
+hooks in `.claude/` that check architecture after each edit and ask before protected paths. CI is hardened
 (least-privilege tokens, SHA-pinned actions, zizmor, gitleaks); details in
 [docs/SECURITY.md](docs/SECURITY.md). To report a vulnerability, see [SECURITY.md](SECURITY.md).
 
