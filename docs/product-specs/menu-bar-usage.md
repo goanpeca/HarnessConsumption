@@ -16,8 +16,9 @@ $4,000 per month), the menu bar shows a single `◔ 62%` (percent of that pool l
 provider's spend is missing or stale) and the panel opens with a Shared budget card: percent left,
 a bar with the even-pace tick, dollars left, dollars per work day. Each provider also shows what it
 spent and its share of the pool. Claude reports dollars; Codex reports credits, converted as
-`used / limit x "Codex limit is worth (USD)"`. Budget 0 turns it off and the menu bar goes back to
-one percentage per provider.
+`used / limit x "Codex limit is worth (USD)"`. The "Claude and Codex share one budget" switch picks the mode: off, each provider
+gets its own budget (Settings: Claude budget, Codex budget), its own card and its own `✳︎ 62%  ◎ 96%`
+in the menu bar. A budget of 0 hides that budget.
 
 Per provider: plan, then each window (5-hour, weekly) with a bar, percent left, reset time.
 Weekly rows add "Today: X% · N days left" (orange when over pace). A month section shows days left,

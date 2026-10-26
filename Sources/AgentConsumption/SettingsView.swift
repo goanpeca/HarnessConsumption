@@ -47,13 +47,19 @@ struct SettingsView: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Shared budget").font(.headline)
-                MoneyField(title: "Per month (USD)", value: budgetTotal)
-                MoneyField(title: "Codex limit is worth (USD)", value: codexLimit)
-                Text(
-                    "One pool for Claude and Codex together; 0 turns it off. Codex reports credits, so this is what its limit is worth in dollars."
-                )
-                .font(.caption).foregroundStyle(.secondary)
+                Text("Budget").font(.headline)
+                Toggle("Claude and Codex share one budget", isOn: budgetShared)
+                if store.budget.isShared {
+                    MoneyField(title: "Per month (USD)", value: budgetTotal)
+                    MoneyField(title: "Codex limit is worth (USD)", value: codexLimit)
+                    Text("One pool for both. Codex reports credits, so this is what its limit is worth in dollars.")
+                        .font(.caption).foregroundStyle(.secondary)
+                } else {
+                    MoneyField(title: "Claude budget (USD)", value: claudeBudget)
+                    MoneyField(title: "Codex budget (USD)", value: codexLimit)
+                    Text("Each provider has its own monthly budget. 0 hides that provider's budget.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             }
 
             VStack(alignment: .leading, spacing: 6) {
@@ -119,12 +125,32 @@ struct SettingsView: View {
             })
     }
 
+    private var budgetShared: Binding<Bool> {
+        Binding(
+            get: { store.budget.isShared },
+            set: { value in
+                var new = store.budget
+                new.isShared = value
+                store.updateBudget(new)
+            })
+    }
+
     private var budgetTotal: Binding<Double> {
         Binding(
             get: { store.budget.totalUSD },
             set: { value in
                 var new = store.budget
                 new.totalUSD = value
+                store.updateBudget(new)
+            })
+    }
+
+    private var claudeBudget: Binding<Double> {
+        Binding(
+            get: { store.budget.claudeUSD },
+            set: { value in
+                var new = store.budget
+                new.claudeUSD = value
                 store.updateBudget(new)
             })
     }

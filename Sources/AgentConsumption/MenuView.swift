@@ -45,8 +45,8 @@ struct MenuView: View {
 
     private var usage: some View {
         VStack(alignment: .leading, spacing: 14) {
-            if store.budgetStatus != nil {
-                BudgetSection(store: store)
+            ForEach(store.budgetPools, id: \.title) { pool in
+                BudgetSection(store: store, status: pool)
                 Divider()
             }
             ForEach(Provider.allCases) { provider in

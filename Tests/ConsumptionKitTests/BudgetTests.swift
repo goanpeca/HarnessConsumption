@@ -75,8 +75,56 @@ struct BudgetEdgeTests {
         let decoded = try JSONDecoder().decode(BudgetSettings.self, from: JSONEncoder().encode(settings))
         #expect(decoded == settings)
         #expect(BudgetSettings().totalUSD == 4000)
-        #expect(BudgetSettings().isOn)
-        #expect(!BudgetSettings(totalUSD: 0).isOn)
+        #expect(BudgetSettings().isShared)
+    }
+
+    @Test func separateBudgetsGiveEachProviderItsOwnPercent() throws {
+        let reset = Fixtures.bogota(11, 1, 0)
+        let claude = claudeUsage(spend: SpendReading(used: 1000, limit: 4200, unit: .usd), resetsAt: reset)
+        var codex = claudeUsage(spend: SpendReading(used: 10_714.5, limit: 42_858, unit: .credits), resetsAt: reset)
+        codex.provider = .codex
+        let settings = BudgetSettings(totalUSD: 4000, claudeUSD: 4000, codexLimitUSD: 4000, isShared: false)
+        let pools = BudgetStatus.pools(usages: [claude, codex], settings: settings)
+        #expect(pools.map(\.title) == ["Claude budget", "Codex budget"])
+        #expect(pools[0].window.usedPercent == 25)
+        #expect(abs(pools[1].window.usedPercent - 25) < 0.001)
+        #expect(pools[0].providers == [.claude])
+        #expect(pools[0].missing.isEmpty)
+    }
+
+    @Test func separateBudgetsDoNotAddUp() throws {
+        let reset = Fixtures.bogota(11, 1, 0)
+        let claude = claudeUsage(spend: SpendReading(used: 2000, limit: 4200, unit: .usd), resetsAt: reset)
+        var codex = claudeUsage(spend: SpendReading(used: 21_429, limit: 42_858, unit: .credits), resetsAt: reset)
+        codex.provider = .codex
+        let separate = BudgetSettings(claudeUSD: 4000, isShared: false)
+        #expect(
+            BudgetStatus.pools(usages: [claude, codex], settings: separate).allSatisfy { $0.window.usedPercent <= 50.1 }
+        )
+        let shared = BudgetStatus.pools(usages: [claude, codex], settings: BudgetSettings())
+        #expect(shared.count == 1)
+        #expect(shared[0].window.usedPercent > 99.9)
+        #expect(shared[0].title == "Shared budget")
+    }
+
+    @Test func aSeparateBudgetOfZeroSkipsThatProvider() {
+        let claude = claudeUsage(spend: SpendReading(used: 100, limit: 4200, unit: .usd), resetsAt: nil)
+        let settings = BudgetSettings(claudeUSD: 0, isShared: false)
+        #expect(BudgetStatus.pools(usages: [claude], settings: settings).isEmpty)
+    }
+
+    @Test func savedSettingsFromBeforeSeparateBudgetsStillLoad() throws {
+        let legacy = Data(#"{"totalUSD":4200,"codexLimitUSD":4000,"isShared":true}"#.utf8)
+        let settings = try JSONDecoder().decode(BudgetSettings.self, from: legacy)
+        #expect(settings.claudeUSD == 4000)
+        #expect(settings.isShared)
+    }
+
+    @Test func savedSettingsFromBeforeTheToggleStillLoadAsShared() throws {
+        let legacy = Data(#"{"totalUSD":4200,"codexLimitUSD":4000}"#.utf8)
+        let settings = try JSONDecoder().decode(BudgetSettings.self, from: legacy)
+        #expect(settings.isShared)
+        #expect(settings.totalUSD == 4200)
     }
 
     @Test func noMonthlyResetMeansNoPaceButStillAPercent() throws {

@@ -129,9 +129,9 @@ final class UsageStore {
         new.save()
     }
 
-    /// The shared budget across providers, or nil when it is off or no provider reports spend.
-    var budgetStatus: BudgetStatus? {
-        BudgetStatus.compute(usages: Provider.allCases.compactMap { states[$0]?.usage }, settings: budget)
+    /// The budgets to show: one shared pool, or one per provider. Empty when none has a spend reading.
+    var budgetPools: [BudgetStatus] {
+        BudgetStatus.pools(usages: Provider.allCases.compactMap { states[$0]?.usage }, settings: budget)
     }
 
     private func apply(_ provider: Provider, _ result: Result<ProviderUsage, Error>) {
@@ -179,9 +179,9 @@ final class UsageStore {
                 lines.append(String(format: "  month: %.0f%% of a week left, %.1f%%/day", projected, daily))
             }
         }
-        if let status = budgetStatus {
+        for status in budgetPools {
             var line = String(
-                format: "budget: $%.0f of $%.0f spent, %.0f%% left", status.spentUSD, status.totalUSD,
+                format: "%@: $%.0f of $%.0f spent, %.0f%% left", status.title, status.spentUSD, status.totalUSD,
                 status.window.remainingPercent)
             if let pace = status.pace(calendar: calendar, now: .now) {
                 line += String(
@@ -197,16 +197,22 @@ final class UsageStore {
         return lines.joined(separator: "\n")
     }
 
+    private func symbol(for provider: Provider) -> String { provider == .claude ? "✳︎" : "◎" }
+
     /// The share of the shared budget left (`◔ 62%`), or without a budget `✳︎ 62%  ◎ 80%`: weekly (or
     /// monthly spend) quota left per provider. Plain text on purpose: the menu bar draws it in the
     /// system's own color.
     var menuBarTitle: String {
-        if let status = budgetStatus {
-            let partial = !status.missing.isEmpty || Provider.allCases.contains { states[$0]?.error != nil }
-            return "◔ \(Int(status.window.remainingPercent.rounded()))%\(partial ? "?" : "")"
+        let pools = budgetPools
+        if !pools.isEmpty {
+            return pools.map { pool in
+                let symbol = pool.providers.count > 1 ? "◔" : symbol(for: pool.providers[0])
+                let partial = !pool.missing.isEmpty || pool.providers.contains { states[$0]?.error != nil }
+                return "\(symbol) \(Int(pool.window.remainingPercent.rounded()))%\(partial ? "?" : "")"
+            }.joined(separator: "  ")
         }
         let parts = Provider.allCases.map { provider -> String in
-            let symbol = provider == .claude ? "✳︎" : "◎"
+            let symbol = symbol(for: provider)
             guard let window = states[provider]?.usage?.headline else { return "\(symbol) –" }
             let stale = states[provider]?.error != nil ? "?" : ""
             return "\(symbol) \(Int(window.remainingPercent.rounded()))%\(stale)"
