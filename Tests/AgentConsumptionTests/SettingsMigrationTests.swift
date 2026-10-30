@@ -57,7 +57,25 @@ struct SettingsMigrationTests {
         #expect(new.defaults.object(forKey: "refreshMinutes") == nil)
     }
 
-    @Test func theOldIdentifierIsTheOneThisAppShippedWith() {
-        #expect(SettingsMigration.oldDomain == "com.goanpeca.agentconsumption")
+    @Test func theOldIdentifiersAreTheOnesThisAppShippedWithNewestFirst() {
+        #expect(SettingsMigration.oldDomains == ["com.goanpeca.harnessconsumption", "com.goanpeca.agentconsumption"])
+    }
+
+    @Test func takesTheNewestOldDomainThatHasSettings() {
+        let newest = Sandbox()
+        let oldest = Sandbox()
+        let new = Sandbox()
+        WorkSettings(countryCode: "DE", isConfigured: true).save(to: newest.defaults)
+        WorkSettings(countryCode: "CO", isConfigured: true).save(to: oldest.defaults)
+        #expect(SettingsMigration.run(fromFirstOf: [newest.defaults, oldest.defaults], to: new.defaults))
+        #expect(WorkSettings.load(from: new.defaults).countryCode == "DE")
+    }
+
+    @Test func fallsBackToAnOlderDomainWhenTheNewerOneIsEmpty() {
+        let oldest = Sandbox()
+        let new = Sandbox()
+        WorkSettings(countryCode: "CO", isConfigured: true).save(to: oldest.defaults)
+        #expect(SettingsMigration.run(fromFirstOf: [Sandbox().defaults, nil, oldest.defaults], to: new.defaults))
+        #expect(WorkSettings.load(from: new.defaults).countryCode == "CO")
     }
 }

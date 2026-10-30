@@ -7,7 +7,8 @@ import SwiftUI
 @main
 enum Launcher {
     @MainActor static func main() {
-        SettingsMigration.run(from: UserDefaults(suiteName: SettingsMigration.oldDomain), to: .standard)
+        SettingsMigration.run(
+            fromFirstOf: SettingsMigration.oldDomains.map { UserDefaults(suiteName: $0) }, to: .standard)
         if CommandLine.arguments.contains("--dump") { dump() }
         if isAlreadyRunning() { exit(0) }
         HarnessConsumptionApp.main()
