@@ -40,10 +40,8 @@ make ci         # everything GitHub Actions runs; the pre-push hook runs it too
 .build/debug/HarnessConsumption --dump   # print the current readings and exit (after `make build`)
 ```
 
-If the app quits right after launching and never shows its menu bar item, macOS has that item switched
-off: enable it under **System Settings > Menu Bar > Allow in the Menu Bar** and open the app again.
-Run the bundled app (`make run`, `make install`) rather than the bare binary in `.build/`, which shows
-up as a second, icon-less entry in that list.
+Only one copy runs at a time: launching it again leaves the running copy alone, and `--dump` prints
+the readings without starting the menu bar app.
 
 ## How it gets the data
 
