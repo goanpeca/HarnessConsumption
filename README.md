@@ -1,4 +1,4 @@
-# Agent Consumption
+# Harness Consumption
 
 [![CI](https://github.com/goanpeca/HarnessConsumption/actions/workflows/ci.yml/badge.svg)](https://github.com/goanpeca/HarnessConsumption/actions/workflows/ci.yml)
 [![Security](https://github.com/goanpeca/HarnessConsumption/actions/workflows/security.yml/badge.svg)](https://github.com/goanpeca/HarnessConsumption/actions/workflows/security.yml)
@@ -29,7 +29,7 @@ count weekdays only. Until you continue, the menu bar reads "Set up". Change it 
 ## Run
 
 ```bash
-make run        # build build/Agent Consumption.app and launch it
+make run        # build build/Harness Consumption.app and launch it
 make install    # copy to /Applications (then turn on "Open at login" in Settings)
 make bootstrap  # install dev tools and git hooks (once)
 make test       # logic tests
@@ -37,8 +37,11 @@ make mutation   # mutation testing of the logic (slow; see below)
 make lint       # swift-format + SwiftLint, both strict
 make security   # zizmor, actionlint, shellcheck, gitleaks
 make ci         # everything GitHub Actions runs; the pre-push hook runs it too
-.build/debug/AgentConsumption --dump   # print the current readings and exit (after `make build`)
+.build/debug/HarnessConsumption --dump   # print the current readings and exit (after `make build`)
 ```
+
+Only one copy runs at a time: launching it again leaves the running copy alone, and `--dump` prints
+the readings without starting the menu bar app.
 
 ## How it gets the data
 

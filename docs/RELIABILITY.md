@@ -7,6 +7,7 @@ The risk is not a missed number; it is breaking the user's Claude Desktop or Cod
 | Claude token expired or rejected (401/403) | Show "open Claude Desktop". Never refresh it: Desktop owns rotation and rotating it could sign Desktop out |
 | Keychain read of `Claude Safe Storage` denied | Show the error inline; nothing is cached |
 | Codex token expired (401/403) | Show "open the ChatGPT/Codex desktop app". Never refresh it: rotating it could sign Codex out |
+| A second copy of the app starts while one is running (opening the binary again, `--dump` from the installed app) | macOS marks the menu bar item as removed, quits both copies, and remembers it at every later launch. So `--dump` never starts the menu bar app, a second launch exits before creating an item, and the app binds `isInserted` and puts its item back if macOS removes it, instead of quitting |
 | Endpoint changed or unreachable | Keep the last reading, mark it with the error, menu bar shows `?` |
 | Holidays can't load | Warn in the UI; days are counted without holidays |
 | Unparsable response | `UsageParseError`; treated as a failed fetch, never partial data |

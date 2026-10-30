@@ -4,7 +4,7 @@ The map for agents working in this repo. Keep it ~100 lines; detail lives in `do
 
 ## What this is
 
-**Agent Consumption** is a macOS 14+ menu bar app (SwiftUI, Swift 6) that shows how much of your
+**Harness Consumption** is a macOS 14+ menu bar app (SwiftUI, Swift 6) that shows how much of your
 **Claude** and **Codex** plan limits is left, paced over the work days remaining. Work days follow
 settings: country holidays (or none), counted weekdays, check interval. It reuses the logins the Claude
 Desktop and ChatGPT/Codex desktop apps already keep on the Mac and reads two **undocumented** endpoints, so it is a
@@ -36,16 +36,16 @@ Makefile                     Task runner; the source of truth for what each gate
 | `make mutation` | Mutation testing of `ConsumptionKit` (slow; see [mutation-testing.md](docs/references/mutation-testing.md)) |
 | `make lint` | swift-format (strict) + SwiftLint (strict) |
 | `make security` | zizmor, actionlint, shellcheck, gitleaks |
-| `make app` / `make run` | Build `build/Agent Consumption.app` / build and launch it |
+| `make app` / `make run` | Build `build/Harness Consumption.app` / build and launch it |
 | `make ci` | Full gate, exactly what CI runs. Must be green before you hand off |
 
-Debug a reading without the UI: `.build/debug/AgentConsumption --dump` (after `make build`).
+Debug a reading without the UI: `.build/debug/HarnessConsumption --dump` (after `make build`).
 Logs: `make logs` (subsystem `com.goanpeca.agentconsumption`).
 
 ## Verifying your work
 
 Run `make ci` before reporting any task complete and paste its result; it is exactly what CI runs
-and ends with `app` building and signing `build/Agent Consumption.app`. If a test fails, fix the code,
+and ends with `app` building and signing `build/Harness Consumption.app`. If a test fails, fix the code,
 not the test. Never skip or delete a failing test or a check.
 
 ## Merge gate
