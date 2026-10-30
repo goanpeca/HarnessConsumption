@@ -8,7 +8,7 @@ struct SetupView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Welcome to Agent Consumption").font(.title3.weight(.semibold))
+            Text("Welcome to Harness Consumption").font(.title3.weight(.semibold))
             Text(
                 "Your limits are spread over the work days that remain. Choose the country whose public holidays count as days off, or none to count weekdays only."
             )

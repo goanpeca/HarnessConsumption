@@ -10,4 +10,4 @@
   `setRefreshInterval(_:)`. Views never touch credentials or the network.
 - **Filenames:** anything that imports SwiftUI or AppKit is `*View.swift`, `App.swift` or
   `PanelPinning.swift` (enforced by `check-architecture.py`).
-- **Verify without screenshots:** `AgentConsumption --dump` prints what the views would show.
+- **Verify without screenshots:** `HarnessConsumption --dump` prints what the views would show.

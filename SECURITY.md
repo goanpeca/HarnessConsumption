@@ -1,6 +1,6 @@
 # Security policy
 
-Agent Consumption is an open-source project (MIT licensed) maintained on a best-effort basis. Security
+Harness Consumption is an open-source project (MIT licensed) maintained on a best-effort basis. Security
 reports are taken seriously because the app handles login tokens.
 
 ## Supported versions
@@ -11,7 +11,7 @@ Only the latest commit on `main` is supported. There are no release branches.
 
 Please report privately, not in a public issue or pull request:
 
-- Email **goanpeca@gmail.com** with "Agent Consumption security" in the subject, or
+- Email **goanpeca@gmail.com** with "Harness Consumption security" in the subject, or
 - Open a private security advisory on GitHub (Security → Report a vulnerability).
 
 Include what you found, how to reproduce it, and what you think the impact is. Do not include real

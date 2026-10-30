@@ -3,9 +3,10 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleIdentifier</key><string>com.goanpeca.agentconsumption</string>
-    <key>CFBundleName</key><string>Agent Consumption</string>
-    <key>CFBundleDisplayName</key><string>Agent Consumption</string>
-    <key>CFBundleExecutable</key><string>AgentConsumption</string>
+    <key>CFBundleName</key><string>Harness Consumption</string>
+    <key>CFBundleDisplayName</key><string>Harness Consumption</string>
+    <key>CFBundleExecutable</key><string>HarnessConsumption</string>
+    <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleShortVersionString</key><string>0.1.0</string>
     <key>CFBundleVersion</key><string>1</string>

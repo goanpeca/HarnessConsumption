@@ -38,5 +38,5 @@ jobs:
       - name: App bundle
         run: |
           make app
-          codesign --verify --verbose "build/Agent Consumption.app"
-          plutil -lint "build/Agent Consumption.app/Contents/Info.plist"
+          codesign --verify --verbose "build/Harness Consumption.app"
+          plutil -lint "build/Harness Consumption.app/Contents/Info.plist"

@@ -56,7 +56,7 @@ struct SettingsView: View {
                 if let loginError {
                     Text(loginError).font(.caption).foregroundStyle(.orange)
                 } else if LaunchAtLogin.needsApproval {
-                    Text("Approve Agent Consumption in System Settings > General > Login Items.")
+                    Text("Approve Harness Consumption in System Settings > General > Login Items.")
                         .font(.caption).foregroundStyle(.orange)
                 }
             }

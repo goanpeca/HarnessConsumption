@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct AgentConsumptionApp: App {
+struct HarnessConsumptionApp: App {
     @State private var store: UsageStore
     private let notifier: Notifier
 
