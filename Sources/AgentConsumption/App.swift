@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 
 /// Decides how the process runs before any menu bar item exists. A second copy of the app creating its
@@ -10,9 +9,16 @@ enum Launcher {
         SettingsMigration.run(
             fromFirstOf: SettingsMigration.oldDomains.map { UserDefaults(suiteName: $0) }, to: .standard)
         if CommandLine.arguments.contains("--dump") { dump() }
-        if isAlreadyRunning() { exit(0) }
+        let identifier = Bundle.main.bundleIdentifier ?? ProcessInfo.processInfo.processName
+        let file = SingleInstanceLock.defaultFile(
+            identifier: identifier, temporary: FileManager.default.temporaryDirectory)
+        guard let lock = SingleInstanceLock.acquire(at: file) else { exit(0) }
+        instanceLock = lock
         HarnessConsumptionApp.main()
     }
+
+    /// Held until the process ends, so no second copy can start.
+    @MainActor private static var instanceLock: SingleInstanceLock?
 
     /// Prints the current readings and exits, without a menu bar item.
     @MainActor private static func dump() -> Never {
@@ -25,13 +31,6 @@ enum Launcher {
         }
         RunLoop.main.run()
         exit(0)
-    }
-
-    private static func isAlreadyRunning() -> Bool {
-        guard let identifier = Bundle.main.bundleIdentifier else { return false }
-        let me = ProcessInfo.processInfo.processIdentifier
-        return NSRunningApplication.runningApplications(withBundleIdentifier: identifier)
-            .contains { $0.processIdentifier != me }
     }
 }
 
