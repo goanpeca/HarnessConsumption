@@ -11,17 +11,31 @@ final class SingleInstanceLock: @unchecked Sendable {
         self.descriptor = descriptor
     }
 
-    /// The lock at `file`, or nil when another process holds it.
-    static func acquire(at file: URL) -> SingleInstanceLock? {
-        try? FileManager.default.createDirectory(
-            at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
-        let descriptor = open(file.path, O_CREAT | O_RDWR | O_CLOEXEC, 0o600)
-        guard descriptor >= 0 else { return nil }
-        guard flock(descriptor, LOCK_EX | LOCK_NB) == 0 else {
-            close(descriptor)
-            return nil
+    enum Outcome {
+        case acquired(SingleInstanceLock)
+        /// Another process holds it: another copy of the app is running.
+        case heldElsewhere
+        /// The lock could not be made at all (unwritable folder, unopenable file). Says nothing about
+        /// other copies, so it must not be treated as one.
+        case failed(String)
+    }
+
+    static func acquire(at file: URL) -> Outcome {
+        do {
+            try FileManager.default.createDirectory(
+                at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+        } catch {
+            return .failed("can't create \(file.deletingLastPathComponent().path): \(error.localizedDescription)")
         }
-        return SingleInstanceLock(descriptor: descriptor)
+        let descriptor = open(file.path, O_CREAT | O_RDWR | O_CLOEXEC, 0o600)
+        guard descriptor >= 0 else { return .failed("can't open \(file.path): \(String(cString: strerror(errno)))") }
+        guard flock(descriptor, LOCK_EX | LOCK_NB) == 0 else {
+            let code = errno
+            close(descriptor)
+            return code == EWOULDBLOCK
+                ? .heldElsewhere : .failed("can't lock \(file.path): \(String(cString: strerror(code)))")
+        }
+        return .acquired(SingleInstanceLock(descriptor: descriptor))
     }
 
     /// `<temporary folder>/<bundle identifier>.lock`: one lock per app, per user.

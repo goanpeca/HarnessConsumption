@@ -1,4 +1,5 @@
 import SwiftUI
+import os
 
 /// Decides how the process runs before any menu bar item exists. A second copy of the app creating its
 /// own item makes macOS mark the item as removed and quit both copies, and remember that at every later
@@ -12,10 +13,19 @@ enum Launcher {
         let identifier = Bundle.main.bundleIdentifier ?? ProcessInfo.processInfo.processName
         let file = SingleInstanceLock.defaultFile(
             identifier: identifier, temporary: FileManager.default.temporaryDirectory)
-        guard let lock = SingleInstanceLock.acquire(at: file) else { exit(0) }
-        instanceLock = lock
+        switch SingleInstanceLock.acquire(at: file) {
+        case let .acquired(lock):
+            instanceLock = lock
+        case .heldElsewhere:
+            exit(0)
+        case let .failed(reason):
+            // Not proof of another copy: start anyway, without the guarantee, and say why.
+            log.error("single-instance lock unavailable, starting without it: \(reason, privacy: .public)")
+        }
         HarnessConsumptionApp.main()
     }
+
+    private static let log = Logger(subsystem: "com.goanpeca.agentconsumption", category: "launch")
 
     /// Held until the process ends, so no second copy can start.
     @MainActor private static var instanceLock: SingleInstanceLock?
