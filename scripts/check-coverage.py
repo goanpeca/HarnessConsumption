@@ -27,7 +27,11 @@ NEEDS_A_REAL_APP = {"App.swift", "Notifier.swift", "PanelPinning.swift", "Launch
 def run(cmd: list[str]) -> str:
     result = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
     if result.returncode != 0:
-        sys.exit(f"error: `{' '.join(cmd)}` failed:\n{result.stdout[-2000:]}\n{result.stderr[-2000:]}")
+        output = result.stdout + result.stderr
+        # Name the failing tests first: the tail alone can cut them off.
+        failures = [line for line in output.splitlines() if "recorded an issue" in line or line.startswith("✘ Test ")]
+        named = "\n".join(failures[:40]) or "(no failing test named in the output)"
+        sys.exit(f"error: `{' '.join(cmd)}` failed:\n{named}\n--- last lines ---\n{output[-2000:]}")
     return result.stdout
 
 
