@@ -3,7 +3,7 @@ import Foundation
 
 /// Text renderings of the store: the `--dump` report and the menu bar title.
 extension UsageStore {
-    /// Plain-text report for `AgentConsumption --dump`.
+    /// Plain-text report for `HarnessConsumption --dump`.
     var report: String {
         var lines = ["menu bar: \(menuBarTitle)"]
         for provider in Provider.allCases {

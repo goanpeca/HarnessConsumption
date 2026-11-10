@@ -6,7 +6,7 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "ConsumptionKit", targets: ["ConsumptionKit"]),
-        .executable(name: "AgentConsumption", targets: ["AgentConsumption"]),
+        .executable(name: "HarnessConsumption", targets: ["AgentConsumption"]),
     ],
     targets: [
         .target(name: "ConsumptionKit"),

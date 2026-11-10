@@ -1,4 +1,4 @@
-APP := build/Agent Consumption.app
+APP := build/Harness Consumption.app
 SWIFT_SOURCES := Sources Tests Package.swift
 
 .PHONY: help bootstrap hooks test coverage mutation stability check lint format security build app run install logs ci clean
@@ -53,14 +53,15 @@ app:             ## Release .app bundle in build/
 	bash scripts/bundle.sh
 
 run: app         ## Build and launch the menu bar app
-	-pkill -x AgentConsumption
+	-pkill -x HarnessConsumption
 	open "$(APP)"
 
-install: app     ## Copy to /Applications
+install: app     ## Copy to /Applications (also removes the app's old "Agent Consumption" copy)
+	-pkill -x HarnessConsumption
 	-pkill -x AgentConsumption
-	rm -rf "/Applications/Agent Consumption.app"
+	rm -rf "/Applications/Agent Consumption.app" "/Applications/Harness Consumption.app"
 	cp -R "$(APP)" /Applications/
-	open "/Applications/Agent Consumption.app"
+	open "/Applications/Harness Consumption.app"
 
 logs:            ## Stream the app's logs
 	log stream --predicate 'subsystem == "com.goanpeca.agentconsumption"' --level info
