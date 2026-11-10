@@ -58,7 +58,11 @@ struct SettingsMigrationTests {
     }
 
     @Test func theOldIdentifiersAreTheOnesThisAppShippedWithNewestFirst() {
-        #expect(SettingsMigration.oldDomains == ["com.goanpeca.harnessconsumption", "com.goanpeca.agentconsumption"])
+        #expect(
+            SettingsMigration.oldDomains == [
+                "io.github.goanpeca.harnessconsumption", "com.goanpeca.harnessconsumption",
+                "com.goanpeca.agentconsumption",
+            ])
     }
 
     @Test func takesTheNewestOldDomainThatHasSettings() {

@@ -1,13 +1,16 @@
 import Foundation
 
 /// The app's bundle identifier moved (`com.goanpeca.agentconsumption`, then
-/// `com.goanpeca.harnessconsumption`, now `io.github.goanpeca.harnessconsumption`), and each identifier has
+/// `com.goanpeca.harnessconsumption`, `io.github.goanpeca.harnessconsumption`, now
+/// `io.github.goanpeca.harness-consumption`), and each identifier has
 /// its own defaults domain. On first launch this carries the user's settings over from the newest old
-/// domain that has them. It never copies the `NSStatusItem` keys: macOS had marked both old identifiers'
-/// menu bar items as removed, and would not show them again.
+/// domain that has them. It never copies the `NSStatusItem` keys: macOS had marked each old identifier's
+/// menu bar item as removed, and would not show it again.
 enum SettingsMigration {
     /// Newest first.
-    static let oldDomains = ["com.goanpeca.harnessconsumption", "com.goanpeca.agentconsumption"]
+    static let oldDomains = [
+        "io.github.goanpeca.harnessconsumption", "com.goanpeca.harnessconsumption", "com.goanpeca.agentconsumption",
+    ]
     static let keys = ["workSettings", "budgetSettings", "refreshMinutes", "alertState"]
 
     /// Copies from the first of `olds` that has settings. Returns whether anything was copied.

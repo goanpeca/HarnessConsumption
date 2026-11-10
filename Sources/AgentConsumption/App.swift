@@ -46,9 +46,10 @@ enum Launcher {
 
 struct HarnessConsumptionApp: App {
     @State private var store: UsageStore
-    /// The app keeps its menu bar item: when macOS takes it out, it goes straight back in instead of the
-    /// app quitting, which is what an unbound `MenuBarExtra` does.
+    /// When macOS takes the menu bar item out, the app puts it back once instead of quitting (what an
+    /// unbound `MenuBarExtra` does). Only once per launch: if macOS keeps hiding it, fighting is pointless.
     @State private var isInserted = true
+    @State private var hasReinserted = false
     private let notifier: Notifier
 
     init() {
@@ -68,7 +69,9 @@ struct HarnessConsumptionApp: App {
         }
         .menuBarExtraStyle(.window)
         .onChange(of: isInserted) { _, inserted in
-            if !inserted { isInserted = true }
+            guard !inserted, !hasReinserted else { return }
+            hasReinserted = true
+            isInserted = true
         }
     }
 }
